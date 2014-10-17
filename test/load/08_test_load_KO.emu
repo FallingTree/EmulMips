@@ -1,0 +1,6 @@
+#-------
+#TEST_RETURN_CODE=FAIL    
+#TEST_COMMENT="Test d'ouverture d'un fichier"
+#-------
+
+load procedure.o 0000AAAA
