@@ -18,6 +18,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "common/types.h"
+#include "elf/syms.h"
 
 
 
@@ -41,9 +42,15 @@ typedef struct {
 } *mem;
 
 typedef struct {
-    byte      *content;
+    unsigned int  content;
     char      *name;
 } reg;
+
+typedef struct {
+    mem *p_memory;
+    reg *p_registre;
+    stab *p_symtab;   
+} pm_glob;
 
 #define R__   1
 #define RW_   2
@@ -78,6 +85,7 @@ typedef struct {
 #define SCN_RIGHTS(attr)         (((attr)&0x000000ff))
 #define SCN_WIDTH(attr)          (((attr))>>8)
 
+void init_reg(reg *registre);
 mem  init_mem( uint32_t nseg );
 int attach_scn_to_mem( mem vm, char *name, uint32_t attr );
 int fill_mem_scn( mem vm, char *name, vsize sz, vaddr start, byte *content );

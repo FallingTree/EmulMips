@@ -47,7 +47,6 @@ typedef struct {
     char first_token;
 } *interpreteur;
 
-void print_byte(byte* byte_array);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);
 char* get_next_token(interpreteur inter);
@@ -61,8 +60,8 @@ int get_type(char* chaine);
 int _testcmd(int hexValue);
 int testcmd(interpreteur inter);
 int exitcmd(interpreteur inter);
-int loadcmd(interpreteur inter, mem* memory, stab* symtab, FILE * pf_elf);
-int dispcmd(interpreteur inter,mem* memory, reg* registre);
+int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf);
+int dispcmd(interpreteur inter,pm_glob param);
 int disasmcmd(interpreteur inter);
 int setcmd(interpreteur inter) ;
 int assertcmd (interpreteur inter);
@@ -71,7 +70,7 @@ void resumecmd (interpreteur inter);
 void stepcmd (interpreteur inter);
 int breakcmd(interpreteur inter);
 void helpcmd(interpreteur inter);
-int execute_cmd(interpreteur inter,mem* memory,reg* registre,stab* symtab,FILE * pf_elf);
+int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 void string_standardise( char* in, char* out );
 int  acquire_line(FILE *fp, interpreteur inter);
 void usage_ERROR_MSG( char *command );

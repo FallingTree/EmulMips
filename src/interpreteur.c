@@ -9,17 +9,6 @@
  #include "load.h"
 
 
-void print_byte(byte* byte_array){
-
-	int i=0;
-	while (i < sizeof(byte_array))
-{
-     printf("%02X",(int)byte_array[i]);
-     i++;
-}
-
-
-}
 
 /**
  * allocation et init interpreteur
@@ -172,9 +161,10 @@ int is_reg(char* chaine)
 	{	
 		case 2 : //registres $0 à $9
 			if (chaine[0]=='$' && chaine[1]>='0' && chaine[1]<='9')	resu = 1;
-			else if (chaine[0]=='h' && chaine[1]=='i') resu = 1;  
-			else if (chaine[0]=='l' && chaine[1]=='o') resu = 1;
-			else if (chaine[0]=='p' && chaine[1]=='c') resu = 1;			
+			else if (chaine[0]=='h' && chaine[1]=='i') resu = 2;  
+			else if (chaine[0]=='l' && chaine[1]=='o') resu = 2;
+			else if (chaine[0]=='p' && chaine[1]=='c') resu = 2;
+			else if (chaine[0]=='s' && chaine[1]=='p') resu = 2;			
 			else resu = 0;
 			break;
 
@@ -182,13 +172,13 @@ int is_reg(char* chaine)
 			if (chaine[0]=='$' && chaine[1]>='1' && chaine[1]<='2' && chaine[2]>='0' && chaine[2]<='9') resu = 1; //registres $10 à $29
 			else if (chaine[0]=='$' && chaine[1]=='3' && (chaine[2]=='0' ||  chaine[2]=='1')) resu = 1; //registres $30 et $31
 			else if (chaine[0]=='$' && chaine[1]=='v' && (chaine[2]=='0' ||  chaine[2]=='1')) resu = 1; //registres $v0 et $v1
-			else if (chaine[0]=='$' && chaine[1]=='a' && chaine[2]<='3' && chaine[2]>='0') resu = 1; //registres $a0 à $a3
-			else if (chaine[0]=='$' && chaine[1]=='t' && chaine[2]<='9' && chaine[2]>='0') resu = 1; //registres $t0 à $t9
-			else if (chaine[0]=='$' && chaine[1]=='s' && chaine[2]<='7' && chaine[2]>='0') resu = 1; //registres $s0 à $s7
-			else if (chaine[0]=='$' && chaine[1]=='k' && (chaine[2]=='0' ||  chaine[2]=='1')) resu = 1; //registres $k0 et $k1
-			else if (chaine[0]=='$' && chaine[2]=='p' && (chaine[1]=='g' || chaine[1]=='s' || chaine[1]=='f' )) resu = 1; //registres $gp $sp et $fp
-			else if (chaine[0]=='$' && chaine[1]=='r' && chaine[2]=='a') resu = 1;
-			else if (chaine[0]=='$' && chaine[1]=='a' && chaine[2]=='t') resu = 1;
+			else if (chaine[0]=='$' && chaine[1]=='a' && chaine[2]<='3' && chaine[2]>='0') resu = 3; //registres $a0 à $a3
+			else if (chaine[0]=='$' && chaine[1]=='t' && chaine[2]<='9' && chaine[2]>='0') resu = 3; //registres $t0 à $t9
+			else if (chaine[0]=='$' && chaine[1]=='s' && chaine[2]<='7' && chaine[2]>='0') resu = 3; //registres $s0 à $s7
+			else if (chaine[0]=='$' && chaine[1]=='k' && (chaine[2]=='0' ||  chaine[2]=='1')) resu = 3; //registres $k0 et $k1
+			else if (chaine[0]=='$' && chaine[2]=='p' && (chaine[1]=='g' || chaine[1]=='s' || chaine[1]=='f' )) resu = 3; //registres $gp $sp et $fp
+			else if (chaine[0]=='$' && chaine[1]=='r' && chaine[2]=='a') resu = 3;
+			else if (chaine[0]=='$' && chaine[1]=='a' && chaine[2]=='t') resu = 3;
 			else resu = 0;
 			break;
 		
@@ -353,7 +343,7 @@ int exitcmd(interpreteur inter) {
 */
 
 
-int loadcmd(interpreteur inter,mem* memory,stab* symtab,FILE * pf_elf) {
+int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 	
 	//On récupère le nom du fichier à ouvrir
 	char *nom_fichier = get_next_token (inter);
@@ -363,7 +353,7 @@ int loadcmd(interpreteur inter,mem* memory,stab* symtab,FILE * pf_elf) {
 
 	if (is_objet(nom_fichier)) 
 	{	
-		return load (memory,symtab,pf_elf,nom_fichier);
+		return load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
 		
 	}
 	else 
@@ -374,9 +364,11 @@ int loadcmd(interpreteur inter,mem* memory,stab* symtab,FILE * pf_elf) {
 }
 
 
-int dispcmd(interpreteur inter,mem* memory, reg* registre) {
+int dispcmd(interpreteur inter,pm_glob param) {
 	char *token = NULL;   
 	int i=0;
+	char reg_nom[3];
+	int reg_num;
 	token = get_next_token (inter);
 	if (token==NULL) return 1; //les fonctions is_type acceptent que token = NULL
 				
@@ -386,13 +378,13 @@ int dispcmd(interpreteur inter,mem* memory, reg* registre) {
 			if (token==NULL) return 1; //Si pas d'argument derrière mem
 
 			if (strcmp(token,"map")==0) { //Dans le cas où on veut afficher la map mémoire
-				if (*memory==NULL)
+				if (*(param.p_memory)==NULL)
 				{
 					WARNING_MSG("Aucun fichier chargé");
 					return -2;
 				}
 				printf("\n------ Sections en mémoire ------\n") ;
-    			print_mem(*memory);
+    			print_mem(*(param.p_memory));
 				return 0;
 			}
 			else if (is_range(token)) //Dans le cas où on veut afficher une plage mémoire 
@@ -413,20 +405,72 @@ int dispcmd(interpreteur inter,mem* memory, reg* registre) {
 			if (token==NULL) return 1;  // Si aucun paramètre de la commande
 			if (strcmp(token,"all")==0) 	// Si on veut afficher tous les registres
 			{
-				for (i = 0; i < NB_REG-1; ++i)
+				for (i = 0; i < NB_REG; ++i)
 				{
-					printf("%s : ",registre[i].name);
-					print_byte(registre[i].content);
+					printf("%s : 0x",param.p_registre[i].name);
+					printf("%08x",param.p_registre[i].content);
 					printf("\n");
 				}
 				return 0;
 			}
-			else if (is_reg(token))
+			else if (is_reg(token))	//Si maintenant on veut afficher des registres en particulier 
 			{
+				
 				while (token!=NULL)
 				{
-					if (!is_reg(token)) return 1;
+					if (!is_reg(token)) return 1;	//S'il ne s'agit pas d'un registre on sort
+					
+					if (is_reg(token)==1)		//Si on a un nombre de registre entre 0 et 31
+					{
+						reg_nom[0]=token[1];
+						reg_nom[1]=token[2];	//On supprime le '$' dans le nom du registre
+						reg_nom[2]=token[3];
+						reg_num=atoi(reg_nom); //On convertit le numéro du registre
+						printf("%s : 0x",param.p_registre[reg_num].name);
+						printf("%08x",param.p_registre[reg_num].content);
+						printf("\n");
+					}
+
+					//S'il s'agit d'un mnémonique
+					if (is_reg(token)==2)
+					{
+		
+						for (i = 0; i < NB_REG; ++i)
+						{
+							//On parcourt le tableau pour sélectionner le registre qui nous intéressent
+							if (strcmp(token,param.p_registre[i].name)==0)	
+							{
+								printf("%s : 0x",param.p_registre[i].name);
+								printf("%08x",param.p_registre[i].content);
+								printf("\n");
+							}
+						}
+					}
+
+					
+					if (is_reg(token)==3){
+
+						reg_nom[0]=token[1];
+						reg_nom[1]=token[2];	//On supprime le '$' dans le nom du registre
+						reg_nom[2]=token[3];
+					
+						for (i = 0; i < NB_REG; ++i)
+						{
+							//On parcourt le tableau pour sélectionner les registres qui nous intéressent
+							if (strcmp(reg_nom,param.p_registre[i].name)==0)	
+							{
+								printf("%s : 0x",param.p_registre[i].name);
+								printf("%08x",param.p_registre[i].content);
+								printf("\n");
+							}
+						}
+
+
+					}
+					
+
 					token = get_next_token (inter);
+
 
 				}
 				return 0;				
@@ -711,7 +755,7 @@ void helpcmd(interpreteur inter)
 * @return -2 si la commande n'est pas reconnue. (-2)
 * @return 1 si erreur d'execution de la commande
 */
-int execute_cmd(interpreteur inter,mem* memory,reg* registre,stab* symtab,FILE * pf_elf) {
+int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
     DEBUG_MSG("input '%s'", inter->input);
     char cmdStr[MAX_STR];
     memset( cmdStr, '\0', MAX_STR );
@@ -734,10 +778,10 @@ int execute_cmd(interpreteur inter,mem* memory,reg* registre,stab* symtab,FILE *
         return testcmd(inter);
     }
     else if(strcmp(token, "load") == 0) {
-        return loadcmd(inter,memory,symtab,pf_elf);
+        return loadcmd(inter,param,pf_elf);
     }
     else if(strcmp(token, "disp") == 0) {
-        return dispcmd(inter,memory,registre);
+        return dispcmd(inter,param);
     }
     else if(strcmp(token, "disasm") == 0) {
         return disasmcmd(inter);

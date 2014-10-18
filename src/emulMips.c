@@ -32,119 +32,14 @@ int main ( int argc, char *argv[] ) {
 
     interpreteur inter=init_inter(); /* structure gardant les infos et états de l'interpreteur*/
     FILE *fp = NULL; /* le flux dans lequel les commande seront lues : stdin (mode shell) ou un fichier */
-    mem memory=NULL;  // memoire virtuelle, c'est elle qui contiendra toute les données du programme
-    reg registre[NB_REG]; //intialisation des registres
-    stab symtab= new_stab(0); // table des symboles
+    pm_glob param;
+    mem memory=NULL;
+    param.p_memory=&memory;  // memoire virtuelle, c'est elle qui contiendra toute les données du programme
+    param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
+    *(param.p_symtab)= new_stab(0); // table des symboles
     FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
     
     
-    //On initialise les registres
-    registre[0].content=calloc(1,32);
-    registre[0].name=strdup("zero");
-
-     registre[1].content=calloc(1,32);
-    registre[1].name=strdup("at");
-
-     registre[2].content=calloc(1,32);
-    registre[2].name=strdup("v0");
-
-     registre[3].content=calloc(1,32);
-    registre[3].name=strdup("v1");
-
-     registre[4].content=calloc(1,32);
-    registre[4].name=strdup("a0");
-
-     registre[4].content=calloc(1,32);
-    registre[4].name=strdup("a1");
-
-     registre[5].content=calloc(1,32);
-    registre[5].name=strdup("a2");
-
-     registre[6].content=calloc(1,32);
-    registre[6].name=strdup("a3");
-
-     registre[7].content=calloc(1,32);
-    registre[7].name=strdup("t0");
-
-     registre[8].content=calloc(1,32);
-    registre[8].name=strdup("t1");
-
-     registre[9].content=calloc(1,32);
-    registre[9].name=strdup("t2");
-
-     registre[10].content=calloc(1,32);
-    registre[10].name=strdup("t3");
-
-     registre[11].content=calloc(1,32);
-    registre[11].name=strdup("t4");
-
-     registre[12].content=calloc(1,32);
-    registre[12].name=strdup("t5");
-
-     registre[13].content=calloc(1,32);
-    registre[13].name=strdup("t6");
-
-     registre[14].content=calloc(1,32);
-    registre[14].name=strdup("t7");
-
-     registre[15].content=calloc(1,32);
-    registre[15].name=strdup("s0");
-
-     registre[16].content=calloc(1,32);
-    registre[16].name=strdup("s1");
-
-     registre[17].content=calloc(1,32);
-    registre[17].name=strdup("s2");
-
-     registre[18].content=calloc(1,32);
-    registre[18].name=strdup("s3");
-
-     registre[19].content=calloc(1,32);
-    registre[19].name=strdup("s4");
-
-     registre[20].content=calloc(1,32);
-    registre[20].name=strdup("s5");
-
-     registre[21].content=calloc(1,32);
-    registre[21].name=strdup("s6");
-
-     registre[22].content=calloc(1,32);
-    registre[22].name=strdup("s7");
-
-     registre[23].content=calloc(1,32);
-    registre[23].name=strdup("t8");
-
-     registre[24].content=calloc(1,32);
-    registre[24].name=strdup("t9");
-
-     registre[25].content=calloc(1,32);
-    registre[25].name=strdup("k0");
-
-     registre[26].content=calloc(1,32);
-    registre[26].name=strdup("k1");
-
-     registre[27].content=calloc(1,32);
-    registre[27].name=strdup("gp");
-
-     registre[28].content=calloc(1,32);
-    registre[28].name=strdup("sp");
-
-     registre[29].content=calloc(1,32);
-    registre[29].name=strdup("fp");
-
-     registre[30].content=calloc(1,32);
-    registre[30].name=strdup("ra");
-
-     registre[31].content=calloc(1,32);
-    registre[31].name=strdup("HI");
-
-     registre[32].content=calloc(1,32);
-    registre[32].name=strdup("L0");
-
-     registre[33].content=calloc(1,32);
-    registre[33].name=strdup("PC");
-
-
 
     //Vérification que la forme des paramètres du programme est bien respectée
     if ( argc > 2 ) {
@@ -155,6 +50,10 @@ int main ( int argc, char *argv[] ) {
         usage_ERROR_MSG( argv[0] );
         exit( EXIT_SUCCESS );
     }
+
+        //On initialise les registres
+    init_reg(param.p_registre);
+
 
     /*par defaut : mode shell interactif */
     fp = stdin;
@@ -178,7 +77,7 @@ int main ( int argc, char *argv[] ) {
         if (acquire_line( fp,  inter)  == 0 ) {
             /* Une nouvelle ligne a ete acquise dans le flux fp*/
 
-            int res = execute_cmd(inter,&memory,registre,&symtab,pf_elf); /* execution de la commande */
+            int res = execute_cmd(inter,param,pf_elf); /* execution de la commande */
 	     
             // traitement des erreurs
             switch(res) {
@@ -195,8 +94,8 @@ int main ( int argc, char *argv[] ) {
                 if ( fp != stdin ) {
                     fclose( fp );
                 }
-                del_mem(memory);
-                del_stab(symtab);
+                del_mem(*(param.p_memory));
+                del_stab(*(param.p_symtab));
                 del_inter(inter);
                 exit(EXIT_SUCCESS);
                 
@@ -210,8 +109,8 @@ int main ( int argc, char *argv[] ) {
                 if (inter->mode == SCRIPT) {
                     fclose( fp );
                     del_inter(inter);
-                    del_mem(memory);
-                    del_stab(symtab);
+                    del_mem(*(param.p_memory));
+                    del_stab(*(param.p_symtab));
                     /*macro ERROR_MSG : message d'erreur puis fin de programme ! */
                     ERROR_MSG("ERREUR DETECTEE. Aborts");
                     
@@ -224,8 +123,8 @@ int main ( int argc, char *argv[] ) {
             DEBUG_MSG("FIN DE FICHIER");
             fclose( fp );
             del_inter(inter);
-            del_mem(memory);
-            del_stab(symtab);
+            del_mem(*(param.p_memory));
+            del_stab(*(param.p_symtab));
             exit(EXIT_SUCCESS);
         }
     }
