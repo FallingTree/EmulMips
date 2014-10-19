@@ -1,0 +1,6 @@
+#-------
+#TEST_RETURN_CODE=FAIL        
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+break add 0x45 0xFFFf 0xFFFG3

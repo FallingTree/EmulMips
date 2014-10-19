@@ -1,3 +1,15 @@
+//----------------------------------------------------------------------------------------------------------------  
+// File : interpreteur.c 
+// Authors : Ammar Mian, Ambre Davat
+// Avec participation de François Cayre, Nicolas Castagné, François Portet
+//
+// Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
+// Fichier contenant les fonctions utiles à l'utilisation de l'interpréteur ainsi que les commandes de celui-ci
+//
+//---------------------------------------------------------------------------------------------------------------- 
+
+
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,7 +20,82 @@
  #include "interpreteur.h"
  #include "load.h"
 
-//Test git
+
+//Fonction qui convertir une adresse hexadécimale (chaine de caractère) en un entier 
+//Attention l'adresse doir etre écrite au maximum sur 8 chiffres sinon renvoie 0
+int convertir_string_add(char* chaine){
+	
+	char *adresse_c;
+	int i=0;
+	int j=0;
+	int k=0;
+	int val=0;
+
+// ------------------------ Vérifications d'usage ----------------------------------------	
+	if (chaine==NULL) return 0;
+
+	while (chaine[i]!='\0'){
+		i++;
+	}
+
+	if (i==0) return 0;
+	if (i==2) return 0;
+
+
+	//S'il sagit d'une adresse sur plus de 8 chiffres
+	if (i>10)
+	{
+		return 0;
+	}
+
+
+// ------------------------ Normalisation de la chaine -------------------------------------
+	adresse_c=strdup("00000000");
+
+
+	//On copie la portion de la chaine non nulle
+	for (k = 10-i; k <= 7; ++k)
+	{
+		adresse_c[k]=chaine[2+k-(10-i)];
+	}
+
+	//printf("%s\n",adresse_c); debug
+
+	
+// ------------------------ Conversion en entier -------------------------------------------
+	for ( j = 7; j >= 0; --j)
+	{
+		if (adresse_c[j]>='0' && adresse_c[j]<='9'){		//S'il sagit d'un chiffre, on retire 48 pour trouver le bon chiffre
+			val+=(adresse_c[j]-48)*(int)pow(16,7-j);
+		    //printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-48, (int)pow(16,7-j)); debug
+
+		}
+
+		else if(adresse_c[j]>='a' && adresse_c[j]<='f')		//S'il sagit d'une lettre minuscule, on retire 87
+		{
+			val+=(adresse_c[j]-87)*(int)pow(16,7-j);
+			//printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-87, (int)pow(16,7-j)); debug
+		}
+
+		else if (adresse_c[j]>='A' && adresse_c[j]<='F')	//S'il sagit d'une lettre majuscule, on retire 55
+		{
+			val+=(adresse_c[j]-55)*(int)pow(16,7-j);
+			//printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-55, (int)pow(16,7-j)); debug
+		}
+
+		else 
+		{
+		//printf("Cas 4 : 0\n"); debug
+		val+=0;
+		}	
+	}
+	// printf("Valeur finale :%d\n",val); debug
+	return val;
+
+
+}
+
+
 
 
 /**
@@ -629,39 +716,43 @@ void stepcmd (interpreteur inter)
 	
 }
 
-int breakcmd(interpreteur inter) 
-{
-	char *token = NULL;   
+int breakcmd(interpreteur inter,pm_glob param) {
+	char *token = NULL;  
+	int adresse;
 	token = get_next_token (inter);
-	if (token==NULL) return 1; 
 
+	if (token==NULL) return 1; //les fonctions is_type acceptent que token = NULL
+				
 	if (strcmp(token,"add")==0)
-	{
-		token = get_next_token (inter);		
-		if (is_hexa(token))
 		{
-			while (token!=NULL)
+			token = get_next_token (inter);
+			if (token==NULL) return 1; //Si pas d'argument derrière add
+			//printf("Le token est : %s\n",token);
+			if (is_hexa(token))	//Si l'argument est bien une adresse 
 			{
-				token = get_next_token (inter);
-				if (!is_hexa(token)) return 1;			
-			}
-			return 0;
+				
+				while (token!=NULL)
+				{
+
+					if (!is_hexa(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
+					// printf("Caratère %s :\n",token); debug
+
+					adresse=convertir_string_add(token);			// On la convertit en nombre
+					if (adresse==0) return 1;		
+
+					// printf("L'adresse ceonvertie est : %x\n",adresse); debug
+					*(param.p_liste_bp)=ajout_tete_int(adresse,*(param.p_liste_bp)); //On la rajoute dans la liste des breakpoints
+					// visualiser_liste_int_t(*(param.p_liste_bp)); debug
+					token = get_next_token (inter);
+
+
+				}
+				return 0;				
+			}			
+			
 		}
-		else return 1;		
+	return 1;
 
-	}
-
-	else if (strcmp(token,"del")==0)
-	{
-		token = get_next_token (inter);
-		if (is_hexa(token)) return 0;
-		else if (strcmp(token,"all")==0) return 0;
-		else return 1;
-	}
-
-	else if (strcmp(token,"list")==0) return 0;
-
-	else return 1;
 }
 
 
@@ -806,7 +897,7 @@ int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
         stepcmd(inter);
     }
     else if(strcmp(token, "break") == 0) {
-        return breakcmd(inter);
+        return breakcmd(inter,param);
     }
     else if(strcmp(token, "help") == 0) {
         helpcmd(inter);

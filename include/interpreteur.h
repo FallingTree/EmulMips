@@ -1,8 +1,18 @@
+//----------------------------------------------------------------------------------------------------------------  
+// File : interpreteur.h
+// Authors : Ammar Mian, Ambre Davat
+// Avec participation de François Cayre, Nicolas Castagné, François Portet
+//
+// Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
+//
+//---------------------------------------------------------------------------------------------------------------- 
+
 #ifndef _INTERPRETEUR_H_
 #define _INTERPRETEUR_H_
 /* la librairie readline */
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <math.h>
 
 /* macros de DEBUG_MSG fournies , etc */
 #include "common/notify.h"
@@ -47,6 +57,7 @@ typedef struct {
     char first_token;
 } *interpreteur;
 
+int convertir_string_add(char* string);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);
 char* get_next_token(interpreteur inter);
@@ -68,7 +79,7 @@ int assertcmd (interpreteur inter);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);
 void stepcmd (interpreteur inter);
-int breakcmd(interpreteur inter);
+int breakcmd(interpreteur inter, pm_glob param);
 void helpcmd(interpreteur inter);
 int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 void string_standardise( char* in, char* out );

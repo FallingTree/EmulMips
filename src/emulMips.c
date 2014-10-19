@@ -1,11 +1,14 @@
-/**
- * @file emulMips.c
- * @author François Cayre, Nicolas Castagné, François Portet
- * @brief Main pour le début du projet émulateur MIPS.
- *
- */
+//----------------------------------------------------------------------------------------------------------------  
+// File : emulMips.c 
+// Authors : Ammar Mian, Ambre Davat
+// Avec participation de François Cayre, Nicolas Castagné, François Portet
+//
+// Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
+// Fichier principal du projet
+//
+//---------------------------------------------------------------------------------------------------------------- 
 
-//A modifier : execmd et loadcmd pour mettre en paramètre mem, symtab et pf_elf
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,9 +21,7 @@
 #include "mem.h"
 
 
-/**
- * Programme principal
- */
+
 int main ( int argc, char *argv[] ) {
 
 
@@ -30,16 +31,7 @@ int main ( int argc, char *argv[] ) {
     DEBUG_MSG("Un message DEBUG_MSG !"); /* macro DEBUG_MSG : uniquement si compil en mode DEBUG_MSG */
 
 
-    interpreteur inter=init_inter(); /* structure gardant les infos et états de l'interpreteur*/
-    FILE *fp = NULL; /* le flux dans lequel les commande seront lues : stdin (mode shell) ou un fichier */
-    pm_glob param;
-    mem memory=NULL;
-    param.p_memory=&memory;  // memoire virtuelle, c'est elle qui contiendra toute les données du programme
-    param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
-    *(param.p_symtab)= new_stab(0); // table des symboles
-    FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
-    
-    
+//-------------------------------------- Vérification paramètres ------------------------------------------------ 
 
     //Vérification que la forme des paramètres du programme est bien respectée
     if ( argc > 2 ) {
@@ -51,9 +43,36 @@ int main ( int argc, char *argv[] ) {
         exit( EXIT_SUCCESS );
     }
 
-        //On initialise les registres
+//--------------------------------------------------------------------------------------------------------------- 
+
+
+//-------------------------------------- Initialisation ---------------------------------------------------------
+
+    interpreteur inter=init_inter(); /* structure gardant les infos et états de l'interpreteur*/
+    FILE *fp = NULL; /* le flux dans lequel les commande seront lues : stdin (mode shell) ou un fichier */
+    pm_glob param;  // Paramètres globaux que l'on retrouvera comme argument de plusieurs fonctions
+    
+    mem memory=NULL; // memoire virtuelle, c'est elle qui contiendra toute les données du programme
+    param.p_memory=&memory;  
+    
+    param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
     init_reg(param.p_registre);
 
+   
+
+    printf("Bienvenue dans l'Emulateur MIPS !\n"); //Sinon Seg Fault ? 
+
+    *(param.p_symtab)= new_stab(0); // table des symboles
+    FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
+
+
+    Liste_int_t liste_bp=creer_liste_int_t(); //Initilaisation de la liste des break points
+    param.p_liste_bp=&liste_bp;
+    visualiser_liste_int_t(*(param.p_liste_bp));
+   
+    
+
+//Initialisation de l'interpréteur
 
     /*par defaut : mode shell interactif */
     fp = stdin;
@@ -68,6 +87,9 @@ int main ( int argc, char *argv[] ) {
         }
         inter->mode = SCRIPT;
     }
+
+
+//----------------------------------------------------------------------------------------------------------------  
 
     /* boucle infinie : lit puis execute une cmd en boucle */
     while ( 1 ) {

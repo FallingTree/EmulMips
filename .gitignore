@@ -10,5 +10,7 @@
 # ignore all .out files in the doc/ directory
 test/**/*.out
 
+.DS_Store
+
 
 

@@ -1,12 +1,12 @@
-
-/**
- * @file mem.h
- * @author François Cayre <francois.cayre@grenoble-inp.fr>
- * @date Fri Nov  1 00:56:03 2013
- * @brief Memory.
- *
- * Memory.
- */
+//----------------------------------------------------------------------------------------------------------------  
+// File : mem.h
+// Authors : Ammar Mian, Ambre Davat
+// Avec participation de François Cayre, Nicolas Castagné, François Portet
+//
+// Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
+// Architecture mémoire de l'émulateur
+//
+//---------------------------------------------------------------------------------------------------------------- 
 
 #ifndef _MEM_H_
 #define _MEM_H_
@@ -19,6 +19,7 @@ extern "C" {
 
 #include "common/types.h"
 #include "elf/syms.h"
+#include "common/liste.h"
 
 
 
@@ -49,7 +50,8 @@ typedef struct {
 typedef struct {
     mem *p_memory;
     reg *p_registre;
-    stab *p_symtab;   
+    Liste_int_t *p_liste_bp; 
+    stab *p_symtab;  
 } pm_glob;
 
 #define R__   1
