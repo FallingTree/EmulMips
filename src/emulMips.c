@@ -68,7 +68,7 @@ int main ( int argc, char *argv[] ) {
 
     Liste_int_t liste_bp=creer_liste_int_t(); //Initilaisation de la liste des break points
     param.p_liste_bp=&liste_bp;
-    visualiser_liste_int_t(*(param.p_liste_bp));
+   // visualiser_liste_int_t(*(param.p_liste_bp)); debug
    
     
 

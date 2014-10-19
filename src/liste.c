@@ -21,7 +21,7 @@
 
 void affiche_int(int i)
 {
-    printf("%08x; ",i);
+    printf("%08x\n",i);
 }
 
 //------------------------------------------------------------------------------------------------
@@ -66,15 +66,19 @@ int est_vide_int(Liste_int_t l)
 
 void visualiser_liste_int_t(Liste_int_t l)
 {
+
+    int i=0;
     Liste_int_t p=l;
     if (est_vide_int(l))
     {
-        printf("Liste Vide !\n");
+        printf("Pas de Break Points\n");
     }
     while (!est_vide_int(p))
     {
+        printf("#%d 0x",i);
         affiche_int(p->val);  
         p=p->suiv;
+        i++;
     }
 	puts("");
 }
@@ -224,6 +228,59 @@ Liste_int_t supprimen_int(int n, Liste_int_t l)
         p->suiv=q;
 
     }    
+    return l;
+}
+
+//------------------------------------------------------------------------------------------------
+
+//Supprime un break point de la liste si présent
+//------------------------------------------------------------------------------------------------
+Liste_int_t supprimer_break_point(Liste_int_t l, int adresse)
+{
+    Liste_int_t p=l;
+    Liste_int_t q=l;
+    Liste_int_t r;
+
+    if (est_vide_int(l))
+     {
+        printf("Impossible de supprimer : Liste des break points vide\n");
+     }   
+    
+    if (est_vide_int(p->suiv) && p->val==adresse)   //Si unique élément d'une liste
+    {
+        return NULL;
+    }
+
+
+    while(!est_vide_int(p) && !(p->val==adresse))   // On se place au bon endroit
+    {
+
+        p=p->suiv;
+    }
+
+
+    if (est_vide_int(p))
+    { 
+        printf("Impossible de supprimer : Liste des break points ne contient pas 0x%x !\n",adresse);
+    } 
+
+    else if (est_vide_int(p->suiv))      //Si dernier élément de la liste
+    {
+        free(p);
+        while(!est_vide_int(q->suiv->suiv))
+        {
+         q=q->suiv;
+        }
+        q->suiv=NULL;
+
+    }
+
+    else {                          //Si élément intermédiaire de la liste
+        r=p->suiv->suiv;
+        free(p->suiv);
+        p->suiv=r;
+    }
+       
     return l;
 }
 

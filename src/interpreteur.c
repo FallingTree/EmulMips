@@ -719,6 +719,7 @@ void stepcmd (interpreteur inter)
 int breakcmd(interpreteur inter,pm_glob param) {
 	char *token = NULL;  
 	int adresse;
+	int test=1;
 	token = get_next_token (inter);
 
 	if (token==NULL) return 1; //les fonctions is_type acceptent que token = NULL
@@ -738,19 +739,62 @@ int breakcmd(interpreteur inter,pm_glob param) {
 					// printf("Caratère %s :\n",token); debug
 
 					adresse=convertir_string_add(token);			// On la convertit en nombre
-					if (adresse==0) return 1;		
+					if (adresse==0) return 1;
 
-					// printf("L'adresse ceonvertie est : %x\n",adresse); debug
+					if (etre_dans_liste(adresse,*(param.p_liste_bp)))
+					{
+						printf("Breakpoint %s déjà dans la liste !\n",token);
+					}
+
+					else {
+
+					// printf("L'adresse convertie est : %x\n",adresse); debug
 					*(param.p_liste_bp)=ajout_tete_int(adresse,*(param.p_liste_bp)); //On la rajoute dans la liste des breakpoints
 					// visualiser_liste_int_t(*(param.p_liste_bp)); debug
-					token = get_next_token (inter);
+					}	
 
+					token = get_next_token (inter);	
 
 				}
+
 				return 0;				
 			}			
 			
 		}
+
+	if (strcmp(token,"list")==0)	
+	{
+			token = get_next_token (inter);
+			if (token!=NULL) return 1; //Si arguments derrière list
+			visualiser_liste_int_t(*(param.p_liste_bp));
+			return 0;
+	}
+
+	if (strcmp(token,"del")==0)
+	{
+			token = get_next_token (inter);
+			if (token==NULL) return 1; //Si pas d'arguments derrière del
+			
+			while (token!=NULL)
+			{
+
+				if (!is_hexa(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
+				//printf("Caratère %s :\n",token); //debug
+
+				adresse=convertir_string_add(token);			// On la convertit en nombre
+				if (adresse==0) return 1;		
+
+				//printf("L'adresse convertie est : %x\n",adresse); //debug
+				*(param.p_liste_bp)=supprimer_break_point(*(param.p_liste_bp),adresse); //On la supprime de la liste des breakpoints si possible
+
+				token = get_next_token (inter);
+
+			}
+
+			return 0;
+	}
+
+
 	return 1;
 
 }
