@@ -3,4 +3,4 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-break del 0xfffF 0x576b 0xFFF 0x44535
+exit

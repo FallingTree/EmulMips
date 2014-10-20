@@ -58,8 +58,6 @@ int main ( int argc, char *argv[] ) {
     param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
     init_reg(param.p_registre);
 
-   
-
     printf("Bienvenue dans l'Emulateur MIPS !\n"); //Sinon Seg Fault ? 
     
     stab symtab=new_stab(0);		// table des symboles
@@ -108,10 +106,7 @@ int main ( int argc, char *argv[] ) {
 		printf("La commande s'est exécutée correctement\n");
         
                 break;
-            case 1:
-		WARNING_MSG("Les paramètres de la commande sont erronés.\nConsulter l'aide avec la commande help.\n");
-        
-	        break;
+
 	    case -1:
                 /* sortie propre du programme */
                 if ( fp != stdin ) {
@@ -123,9 +118,7 @@ int main ( int argc, char *argv[] ) {
                 exit(EXIT_SUCCESS);
                 
                 break;
-	    case -2 :
                 
-		break;
             default:
                 /* erreur durant l'execution de la commande */
                 /* En mode "fichier" toute erreur implique la fin du programme ! */

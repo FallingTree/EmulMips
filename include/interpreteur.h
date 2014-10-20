@@ -57,6 +57,7 @@ typedef struct {
     char first_token;
 } *interpreteur;
 
+int trouver_seg_adresse(int adresse,pm_glob param);
 int convertir_string_add(char* string);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);

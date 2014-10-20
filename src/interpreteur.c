@@ -20,6 +20,20 @@
  #include "interpreteur.h"
  #include "load.h"
 
+//Fonction qui permet de trouver le segment correspondant à une adresse donnée
+int trouver_seg_adresse(int adresse,pm_glob param){
+	int i;
+
+	 for ( i= 0; i < (*(param.p_memory))->nseg-1; i++ ) {
+		if ( (*(param.p_memory))->seg[i].start._32 <= adresse && (*(param.p_memory))->seg[i+1].start._32>adresse) return i;
+	}
+	
+	//Cas où il s'agit du dernier segment
+	if ( (*(param.p_memory))->seg[i+1].start._32<=adresse) return i+1;
+
+	return -1; //Si ne se trouve pas dans la mémoire
+}
+
 
 //Fonction qui convertir une adresse hexadécimale (chaine de caractère) en un entier 
 //Attention l'adresse doir etre écrite au maximum sur 8 chiffres sinon renvoie 0
@@ -420,6 +434,10 @@ int testcmd(interpreteur inter) {
  * @return 0 en case de succes, un nombre positif sinon
  */
 int exitcmd(interpreteur inter) {
+    char* token=get_next_token (inter);
+
+    if (!(token==NULL)) return 1;
+
     INFO_MSG("Bye bye !");
     return -1;
 }
@@ -438,7 +456,10 @@ int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 
 	//Ainsi que l'adresse du premier segment
 	char* adresse=get_next_token (inter);
-
+	if (adresse!= NULL && !is_hexa(adresse)){
+		WARNING_MSG("Attention : %s n'est pas une adresse\n",adresse);
+		return 1;
+	}
 	if (is_objet(nom_fichier)) 
 	{	
 		return load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
@@ -719,7 +740,7 @@ void stepcmd (interpreteur inter)
 int breakcmd(interpreteur inter,pm_glob param) {
 	char *token = NULL;  
 	int adresse;
-	int test=1;
+
 	token = get_next_token (inter);
 
 	if (token==NULL) return 1; //les fonctions is_type acceptent que token = NULL

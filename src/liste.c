@@ -244,6 +244,7 @@ Liste_int_t supprimer_break_point(Liste_int_t l, int adresse)
     if (est_vide_int(l))
      {
         printf("Impossible de supprimer : Liste des break points vide\n");
+	return NULL;
      }   
     
     if (est_vide_int(p->suiv) && p->val==adresse)   //Si unique élément d'une liste

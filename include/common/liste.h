@@ -30,6 +30,7 @@ Liste_int_t supprimer_tete_int(Liste_int_t l);
 Liste_int_t ajout_queue_int(int c, Liste_int_t l);
 Liste_int_t supprimen_int(int n, Liste_int_t l);
 Liste_int_t supprimer_break_point(Liste_int_t l, int adresse);
+Liste_int_t supprimer_liste_bp(Liste_int_t l);
 int compter_elements_int(Liste_int_t l);
 int etre_dans_liste(int i,Liste_int_t l);
 

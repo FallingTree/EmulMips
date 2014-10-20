@@ -1,0 +1,6 @@
+#-------
+#TEST_RETURN_CODE=FAIL        
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+load procedure.o
+disp mem Ox00fg:0x005fd
