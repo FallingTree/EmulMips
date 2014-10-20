@@ -286,6 +286,34 @@ Liste_int_t supprimer_break_point(Liste_int_t l, int adresse)
 
 //------------------------------------------------------------------------------------------------
 
+// Fontion supprimer_liste_bp
+//------------------------------------------------------------------------------------------------
+
+//Permet de supprimer la liste des break points
+
+Liste_int_t supprimer_liste_bp(Liste_int_t l)
+{
+    Liste_int_t p=l;
+    Liste_int_t q;
+
+    if (est_vide_int(l))
+    {
+        return NULL;
+    }
+
+    
+
+    while(!est_vide_int(p)){
+    q=p->suiv;
+    free(p);
+    p=q;
+    }
+
+    return NULL;
+}
+
+//------------------------------------------------------------------------------------------------
+
 
 
 // Fontion copie_int

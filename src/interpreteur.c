@@ -772,9 +772,17 @@ int breakcmd(interpreteur inter,pm_glob param) {
 
 	if (strcmp(token,"del")==0)
 	{
-			token = get_next_token (inter);
-			if (token==NULL) return 1; //Si pas d'arguments derrière del
 			
+		token = get_next_token (inter);
+		if (token==NULL) return 1; //Si pas d'arguments derrière del
+			
+		if (strcmp(token,"all")==0){
+		*(param.p_liste_bp)=supprimer_liste_bp(*(param.p_liste_bp));		
+
+		}
+
+		else {
+
 			while (token!=NULL)
 			{
 
@@ -791,7 +799,9 @@ int breakcmd(interpreteur inter,pm_glob param) {
 
 			}
 
-			return 0;
+		}
+
+		return 0;
 	}
 
 
