@@ -61,8 +61,9 @@ int main ( int argc, char *argv[] ) {
    
 
     printf("Bienvenue dans l'Emulateur MIPS !\n"); //Sinon Seg Fault ? 
-
-    *(param.p_symtab)= new_stab(0); // table des symboles
+    
+    stab symtab=new_stab(0);		// table des symboles
+    param.p_symtab= &symtab; 
     FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
 
 
