@@ -65,8 +65,8 @@ typedef struct {
 #define VSYCALLZ_BYTES 4096
 #define NPAGES(b) ( (b) ? ( (b)>>10 ) ? ((b)>>10)/PGSZ : 1 : 0 )
 
-#define ADDR_STACK 4294963200
-#define ADDR_VSYCALL 4294967295
+#define ADDR_STACK 4286574592
+#define ADDR_VSYCALL 4294963200
 
 
 #define RODATA      0

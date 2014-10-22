@@ -25,10 +25,7 @@
 int main ( int argc, char *argv[] ) {
 
 
-    /* exemples d'utilisation des macros du fichier notify.h */
-    INFO_MSG("Un message INFO_MSG : Debut du programme %s", argv[0]); /* macro INFO_MSG */
-    WARNING_MSG("Un message WARNING_MSG !"); /* macro INFO_MSG */
-    DEBUG_MSG("Un message DEBUG_MSG !"); /* macro DEBUG_MSG : uniquement si compil en mode DEBUG_MSG */
+    printf("Bienvenue dans l'Emulateur MIPS !\n");
 
 
 //-------------------------------------- Vérification paramètres ------------------------------------------------ 
@@ -56,9 +53,7 @@ int main ( int argc, char *argv[] ) {
     param.p_memory=&memory;  
     
     param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
-    init_reg(param.p_registre);
-
-    printf("Bienvenue dans l'Emulateur MIPS !\n"); //Sinon Seg Fault ? 
+    init_reg(param.p_registre);  
     
     stab symtab=new_stab(0);		// table des symboles
     param.p_symtab= &symtab; 
@@ -112,6 +107,9 @@ int main ( int argc, char *argv[] ) {
                 if ( fp != stdin ) {
                     fclose( fp );
                 }
+
+                printf("Fermeture du programme : Au revoir !\n");
+
                 del_mem(*(param.p_memory));
                 del_stab(*(param.p_symtab));
                 del_inter(inter);
@@ -120,6 +118,8 @@ int main ( int argc, char *argv[] ) {
                 break;
                 
             default:
+
+                WARNING_MSG("Erreur durant l'exécution de la commande, se référer à la commande help\n");
                 /* erreur durant l'execution de la commande */
                 /* En mode "fichier" toute erreur implique la fin du programme ! */
                 if (inter->mode == SCRIPT) {
