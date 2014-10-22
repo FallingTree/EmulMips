@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-disasm 0x200d:200k
+disasm 0x200d:0x200k

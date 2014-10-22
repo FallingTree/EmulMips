@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-disasm 0x1998:2200
+disasm 0x1998:0x2200

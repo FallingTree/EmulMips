@@ -19,7 +19,7 @@
 #include "interpreteur.h"
 #include "load.h"
 #include "mem.h"
-
+#include "dico.h"
 
 
 int main ( int argc, char *argv[] ) {
@@ -64,6 +64,11 @@ int main ( int argc, char *argv[] ) {
     param.p_liste_bp=&liste_bp;
    // visualiser_liste_int_t(*(param.p_liste_bp)); debug
    
+   Instruction* tab_instructions;
+   param.p_tab_instructions=&tab_instructions;
+   int load_ok;
+   load_ok=load_dico(param.p_tab_instructions,"dictionnaire.txt");
+
     
 
 //Initialisation de l'interpréteur

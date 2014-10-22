@@ -20,6 +20,7 @@ extern "C" {
 #include "common/types.h"
 #include "elf/syms.h"
 #include "common/liste.h"
+#include "dico.h"
 
 
 
@@ -51,7 +52,8 @@ typedef struct {
     mem *p_memory;
     reg *p_registre;
     Liste_int_t *p_liste_bp; 
-    stab *p_symtab;  
+    stab *p_symtab;
+    Instruction **p_tab_instructions; 
 } pm_glob;
 
 #define R__   1
