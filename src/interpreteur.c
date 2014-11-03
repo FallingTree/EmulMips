@@ -772,7 +772,7 @@ int dispcmd(interpreteur inter,pm_glob param) {
 					}
 
 					//S'il s'agit d'un mnémonique
-					if (is_reg(token)==2)
+					else
 					{
 		
 						for (i = 0; i < NB_REG; ++i)
@@ -785,27 +785,6 @@ int dispcmd(interpreteur inter,pm_glob param) {
 								printf("\n");
 							}
 						}
-					}
-
-					
-					if (is_reg(token)==3){
-
-						reg_nom[0]=token[1];
-						reg_nom[1]=token[2];	//On supprime le '$' dans le nom du registre
-						reg_nom[2]=token[3];
-					
-						for (i = 0; i < NB_REG; ++i)
-						{
-							//On parcourt le tableau pour sélectionner les registres qui nous intéressent
-							if (strcmp(reg_nom,param.p_registre[i].name)==0)	
-							{
-								printf("%s : 0x",param.p_registre[i].name);
-								printf("%08x",param.p_registre[i].content);
-								printf("\n");
-							}
-						}
-
-
 					}
 					
 
