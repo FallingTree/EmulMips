@@ -1,0 +1,2 @@
+set reg $a0 0x555f
+disp reg $4

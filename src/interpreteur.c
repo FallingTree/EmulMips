@@ -970,17 +970,18 @@ int setcmd(interpreteur inter,pm_glob param)
 
 		}
 
-		if (is_reg(token)==2) // Mnémonique pour lequel il n'y a pas besoin de retirer de $
+		if (is_reg(token)==2 || is_reg(token)==3)// Mnémonique 
 		{
 
 			reg=strdup(token);
-			printf("Registre à updater : %s\n",reg);
 			token=get_next_token(inter); //On récupère la valeur à donner
 			if (token==NULL) return 1;
 
+			printf("Youpi\n");
+
 			for (reg_num = 0; reg_num < NB_REG; ++reg_num)
 			{
-				printf("%d\n",reg_num);
+
 				//On parcourt le tableau pour sélectionner le registre qui nous intéressent
 				if (strcmp(reg,param.p_registre[reg_num].name)==0)	
 				{
@@ -988,7 +989,7 @@ int setcmd(interpreteur inter,pm_glob param)
 					if (is_integer(token))
 					{
 						param.p_registre[reg_num].content=atoi(token);
-						printf("Valeur à mettre : %d\n",param.p_registre[reg_num].content);
+						// printf("Valeur à mettre : %d\n",param.p_registre[reg_num].content); //debug
 						return 0;
 					}
 
@@ -1005,44 +1006,7 @@ int setcmd(interpreteur inter,pm_glob param)
 
 		}
 
-		//S'il s'agit d'un mnémonique
-		if (is_reg(token)==3)
-		{
-
-			reg_nom[0]=token[1];
-			reg_nom[1]=token[2];
-			reg_nom[2]=token[3];
-	
-			printf("Registre à updater : %s\n",reg_nom);
-			token=get_next_token(inter); //On récupère la valeur à donner
-			if (token==NULL) return 1;
 		
-			for (reg_num = 0; reg_num < NB_REG; ++reg_num)
-			{
-				//On parcourt le tableau pour sélectionner le registre qui nous intéressent
-				if (strcmp(reg_nom,param.p_registre[reg_num].name)==0)	
-				{
-					if (is_integer(token))
-					{
-						param.p_registre[reg_num].content=atoi(token);
-						return 0;
-					}
-
-					if (is_hexa(token))
-					{
-						param.p_registre[reg_num].content=convertir_string_add(token);
-						return 0;
-					}
-
-					WARNING_MSG("Valeur non correcte !");
-				}
-			}
-
-			WARNING_MSG("Erreur : Registre inconnu\n");
-			return 1;
-		}
-
-
 		return 1;
 	}
 
