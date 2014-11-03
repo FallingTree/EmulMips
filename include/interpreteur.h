@@ -57,6 +57,7 @@ typedef struct {
     char first_token;
 } *interpreteur;
 
+void decouper_word_hexa(char* chaine, byte** tab);
 int trouver_seg_adresse(int adresse,pm_glob param);
 int convertir_string_add(char* string);
 interpreteur init_inter(void);
@@ -75,7 +76,7 @@ int exitcmd(interpreteur inter);
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 int dispcmd(interpreteur inter,pm_glob param);
 int disasmcmd(interpreteur inter);
-int setcmd(interpreteur inter) ;
+int setcmd(interpreteur inter,pm_glob param);
 int assertcmd (interpreteur inter);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);

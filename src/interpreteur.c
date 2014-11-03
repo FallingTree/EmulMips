@@ -24,7 +24,15 @@
 int trouver_seg_adresse(int adresse,pm_glob param){
 	int i;
 
-	 for ( i= 0; i < (*(param.p_memory))->nseg-1; i++ ) {
+
+	if (*(param.p_memory)==NULL)
+	{
+		WARNING_MSG("Aucun fichier chargé");
+		return -2;
+	}
+
+
+	 for ( i= 0; i < (*(param.p_memory))->nseg-2; i++ ) {
 		if ( (*(param.p_memory))->seg[i].start._32 <= adresse && (*(param.p_memory))->seg[i+1].start._32>adresse) return i;
 	}
 	
@@ -32,6 +40,137 @@ int trouver_seg_adresse(int adresse,pm_glob param){
 	if ( (*(param.p_memory))->seg[i+1].start._32<=adresse) return i+1;
 
 	return -1; //Si ne se trouve pas dans la mémoire
+}
+
+
+word trouver_mot_adresse(int adresse, pm_glob param)
+{
+	mem memory = *(param.p_memory);//la mémoire
+
+	//Rappel : memory->seg[i_text].content est un tableau qui (si un fichier elf a été chargé) contient les bytes de la section .text
+	//Si l'adresse virtuelle du mot lu est 0x5000, alors les bytes du mot sont contenus dans les cases 0, 1, 2 et 3 du tableau .content.
+	//Si l'adresse virtuelle du mot lu est 0x5004, alors les bytes du mot sont contenus dans les cases 4, 5, 6, 7 tableau .content.
+	//...
+
+
+	word motlu ;//le mot lu
+	int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+	int position = adresse - memory->seg[iseg].start._32; //Position du premier byte dans le segment
+	byte b1, b2, b3, b4 ; // les bytes constituant le mot
+
+	//Lecture des bytes
+	b1 = memory->seg[iseg].content[position] ;
+	b2 = memory->seg[iseg].content[position+1] ;
+	b3 = memory->seg[iseg].content[position+2] ;
+	b4 = memory->seg[iseg].content[position+3] ;
+
+	//Calcul du mot (le Mips est un processeur de type big endian)
+	//16 puis 2 = 256
+	//16 puis 4 = 65536
+	//16 puis 6 = 16777216
+
+	motlu = b4 + b3*256 + b2*65536 + b1*16777216;
+
+
+	return motlu;
+
+}
+
+//Fonction permettant de découper un mot en hexadécimal en un tableau de byte correspondants aux parties (de 2) du mot
+
+void decouper_word_hexa(char* chaine, byte** tab){
+
+
+	char *adresse_c;
+	int i=0;
+	int k=0;
+	char b0[5], b1[3], b2[3], b3[3]; //Contenants des mots
+
+// ------------------------ Vérifications d'usage ----------------------------------------	
+	if (chaine==NULL) return ;
+
+	while (chaine[i]!='\0'){
+		i++;
+	}
+
+	if (i==0) return ;
+	if (i==2) return ;
+
+
+	//S'il sagit d'une adresse sur plus de 8 chiffres
+	if (i>10)
+	{
+		return ;
+	}
+
+
+// ------------------------ Normalisation de la chaine -------------------------------------
+	adresse_c=strdup("00000000");
+
+
+	//On copie la portion de la chaine non nulle
+	for (k = 10-i; k <= 7; ++k)
+	{
+		adresse_c[k]=chaine[2+k-(10-i)];
+	}
+	
+
+// ------------------------ Découpage de la chaîne -----------------------------------------
+
+	b0[0]='0';
+	b0[1]='x';
+	b0[2]=adresse_c[6];
+	b0[3]=adresse_c[7];
+	b0[4]='\0';
+	(*tab)[0]=convertir_string_add(b0);
+	//printf("b0 : %s\n",b0);	//debug
+	//printf("b0 converti : Ox%x\n",(*tab)[0]); //debug
+
+
+	b1[0]='0';
+	b1[1]='x';
+	b1[2]=adresse_c[4];
+	b1[3]=adresse_c[5];
+	b1[4]='\0';
+	(*tab)[1]=convertir_string_add(b1);
+	//printf("b1 : %s\n",b1);
+
+	b2[0]='0';
+	b2[1]='x';
+	b2[2]=adresse_c[2];
+	b2[3]=adresse_c[3];
+	b2[4]='\0';
+	(*tab)[2]=convertir_string_add(b2);
+	//printf("b2 : %s\n",b2);
+
+	b3[0]='0';
+	b3[1]='x';
+	b3[2]=adresse_c[0];
+	b3[3]=adresse_c[1];
+	b3[4]='\0';
+	(*tab)[3]=convertir_string_add(b3);
+	//printf("b3 : %s\n",b3);
+
+
+
+
+}
+
+
+
+//Fonction qui permet d'obtenir la valeur d'un byte dans un segment à partir de l'adresse virtuelle de ce byte
+//(cette fonction ne fait pas de vérification ; c'est aux fonctions qui l'utilisent de vérifier que l'adresse passée en paramètre est correcte)
+
+byte trouver_byte_adresse(int adresse, pm_glob param)
+{
+	mem memory = *(param.p_memory);//la mémoire
+	byte bylu ;//le byte lu
+	int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+	int position = adresse - memory->seg[iseg].start._32; //Position du byte dans le segment
+
+	bylu = memory->seg[iseg].content[position] ;
+	return bylu;
+
 }
 
 
@@ -478,6 +617,8 @@ int dispcmd(interpreteur inter,pm_glob param) {
 	int i=0;
 	char reg_nom[3];
 	int reg_num;
+	int k;
+	int byte=0;
 	token = get_next_token (inter);
 	if (token==NULL) return 1; //les fonctions is_type acceptent que token = NULL
 				
@@ -485,25 +626,115 @@ int dispcmd(interpreteur inter,pm_glob param) {
 		{
 			token = get_next_token (inter);
 			if (token==NULL) return 1; //Si pas d'argument derrière mem
+			if (*(param.p_memory)==NULL)
+			{
+				WARNING_MSG("Aucun fichier chargé");
+				return -2;
+		    }
 
 			if (strcmp(token,"map")==0) { //Dans le cas où on veut afficher la map mémoire
-				if (*(param.p_memory)==NULL)
-				{
-					WARNING_MSG("Aucun fichier chargé");
-					return -2;
-				}
+				
 				printf("\n------ Sections en mémoire ------\n") ;
     			print_mem(*(param.p_memory));
 				return 0;
 			}
 			else if (is_range(token)) //Dans le cas où on veut afficher une plage mémoire 
 			{
+
 				while (token!=NULL)
 				{
 					if (!is_range(token)) return 1;
+					//On extrait les deux adresses de la plage
+					char* ad1 =NULL;
+					char* ad2 =NULL;
+					int cas = (strchr(token, ':')==NULL);	//Il y a deux types de plages. Celles avec un + et celles avec : 
+												     	//Si cas=0 l'adresse de fin de plage est ad2, sinon c'est ad1+ad2		
+					ad1 = strtok( token, ":+");
+					ad2 = strtok(NULL, ":+");	 
+
+					//Récupération des valeurs des adresses
+
+					int vad1 = convertir_string_add (ad1);
+					int vad2 ;
+					char ** endptr2 = NULL;
+
+					if (cas==0)
+					{
+						vad2 = convertir_string_add(ad2);
+	
+					}
+					else 
+					{
+						vad2 = vad1 + strtol(ad2,endptr2,10);	
+					}
+
+					//On vérifie que la valeur de la deuxième adresse est plus grande que la première
+
+					if (vad1>=vad2) 
+					{
+						printf("La seconde adresse doit être plus grande que la première");
+						return 1;
+					}
+
+					//printf("Adresse 1 : %x\n",vad1);
+					//printf("Adresse 2 : %x\n",vad2);
+
+					//On récupère les segments correspondants des adresses
+					int seg_1=trouver_seg_adresse(vad1, param);
+					int seg_2=trouver_seg_adresse(vad2, param);
+
+					if (seg_1==-1 || seg_2==-1 )
+					{
+						printf("Erreur : Adresse d'un segment non en mémoire\n");
+						return 1;
+					}
+
+					if (seg_1==seg_2)
+					{
+
+						for (k=vad1; k < vad2 && k < (*(param.p_memory))->seg[seg_1].start._32 + (*(param.p_memory))->seg[seg_1].size._32 ; ++k)
+						{
+							byte=trouver_byte_adresse(k,param);
+							printf("Ox%02x ",byte);
+						}
+						
+
+       					 printf("\n");
+
+       					 return 0;
+
+					}
+
+					if (seg_2>seg_1)
+					{
+
+
+					   for (k=vad1; k < (*(param.p_memory))->seg[seg_1].start._32 + (*(param.p_memory))->seg[seg_1].size._32 ; ++k)
+						{
+							byte=trouver_byte_adresse(k,param);
+							printf("Ox%02x ",byte);
+						}
+
+						printf("\n");
+
+       					 for(k=(*(param.p_memory))->seg[seg_2].start._32 ; k<vad2 && k < (*(param.p_memory))->seg[seg_2].start._32 + (*(param.p_memory))->seg[seg_2].size._32 ; k++)
+       					 {
+           		
+                       		byte=trouver_byte_adresse(k,param);
+							printf("Ox%02x ",byte);
+       					 }
+
+       					 printf("\n");
+
+       					 return 0;
+
+
+					}
+
+
 					token = get_next_token (inter);
 				}
-				return 0;
+				return 1;
 			}
 			else return 1; 			
 		}
@@ -608,9 +839,15 @@ int disasmcmd(interpreteur inter)
 	return resu;
 }
 
-int setcmd(interpreteur inter) 
+int setcmd(interpreteur inter,pm_glob param) 
 {
-	char *token = NULL;   
+	char *token = NULL;
+	char reg_nom[3]; 
+	char* reg;
+	int reg_num, adresse, valeur;
+	byte* mot_cut=calloc(4,sizeof(*mot_cut));
+
+
 	token = get_next_token (inter);
 	if (token==NULL) return 1;	
 	
@@ -624,8 +861,32 @@ int setcmd(interpreteur inter)
 			if (token==NULL) return 1;
 			if (is_hexa(token))
 			{
+				adresse=convertir_string_add(token);
 				token = get_next_token (inter);
-				if (is_integer(token)) return 0;
+
+				if (is_hexa(token)){
+
+				int valeur = convertir_string_add(token);
+				if (is_integer8(token)) return 1;
+
+				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
+
+				(*(param.p_memory))->seg[iseg].content[position]=valeur; //On met le nombre voulu dans la mémoire
+				return 0;
+
+				}
+
+				if (is_integer8(token)){
+
+				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
+
+				(*(param.p_memory))->seg[iseg].content[position]=atoi(token); //On met le nombre voulu dans la mémoire
+				return 0;
+
+				}
+				
 				else return 1;				
 			}
 			else return 1;
@@ -633,29 +894,159 @@ int setcmd(interpreteur inter)
 		
 		else if (strcmp(token,"word")==0)
 		{	
+
 			token = get_next_token (inter);	
 			if (is_hexa(token))
 			{
+				adresse=convertir_string_add(token);
 				token = get_next_token (inter);
-				if (is_integer(token)) return 0;
+
+				printf("Youpi\n");
+				if (is_hexa(token)){
+
+
+					decouper_word_hexa(token,&mot_cut);
+					valeur = convertir_string_add(token);
+					if (is_integer8(token)) return 1;
+
+					int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+					int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte de l'adresse dans le segment
+
+					(*(param.p_memory))->seg[iseg].content[position]=mot_cut[0];
+					(*(param.p_memory))->seg[iseg].content[position+1]=mot_cut[1];
+					(*(param.p_memory))->seg[iseg].content[position+2]=mot_cut[2];
+					(*(param.p_memory))->seg[iseg].content[position+3]=mot_cut[3];
+
+
+					return 0;
+
+				}
+				
 				else return 1;				
 			}
 			else return 1;
 		}
 		else return 1;
 	}	
-	else if (strcmp(token,"reg")==0)
+	
+	if (strcmp(token,"reg")==0)	
 	{
+
 		token=get_next_token (inter);
-		if (is_reg(token))
+		if (token==NULL) return 1;
+		
+		if (!is_reg(token)) return 1;	//S'il ne s'agit pas d'un registre on sort
+					
+		if (is_reg(token)==1)		//Si on a un nombre de registre entre 0 et 31
+		{
+			
+			reg_nom[0]=token[1];
+			reg_nom[1]=token[2];	//On supprime le '$' dans le nom du registre
+			reg_nom[2]=token[3];
+			reg_num=atoi(reg_nom); //On convertit le numéro du registre
+			if (reg_num>NB_REG)
 			{
-				token = get_next_token (inter);
-				if (is_integer(token)) return 0;
-				else return 1;				
+				printf("Erreur : registre inconnu\n");
+				return 1;
 			}
-		else return 1;
+
+			token=get_next_token(inter); //On récupère la valeur à donner
+			if (token==NULL) return 1;
+
+			if (is_integer(token))
+			{
+				param.p_registre[reg_num].content=atoi(token);
+				return 0;
+			}
+
+			if (is_hexa(token))
+			{
+				param.p_registre[reg_num].content=convertir_string_add(token);
+				return 0;
+			}
+
+
+			return 1;
+
+		}
+
+		if (is_reg(token)==2) // Mnémonique pour lequel il n'y a pas besoin de retirer de $
+		{
+
+			reg=strdup(token);
+			printf("Registre à updater : %s\n",reg);
+			token=get_next_token(inter); //On récupère la valeur à donner
+			if (token==NULL) return 1;
+
+			for (reg_num = 0; reg_num < NB_REG; ++reg_num)
+			{
+				printf("%d\n",reg_num);
+				//On parcourt le tableau pour sélectionner le registre qui nous intéressent
+				if (strcmp(reg,param.p_registre[reg_num].name)==0)	
+				{
+				
+					if (is_integer(token))
+					{
+						param.p_registre[reg_num].content=atoi(token);
+						printf("Valeur à mettre : %d\n",param.p_registre[reg_num].content);
+						return 0;
+					}
+
+					if (is_hexa(token))
+					{
+						param.p_registre[reg_num].content=convertir_string_add(token);
+						return 0;
+					}
+				}
+			}
+
+			WARNING_MSG("Erreur : Registre inconnu\n");
+			return 1;
+
+		}
+
+		//S'il s'agit d'un mnémonique
+		if (is_reg(token)==3)
+		{
+
+			reg_nom[0]=token[1];
+			reg_nom[1]=token[2];
+			reg_nom[2]=token[3];
+	
+			printf("Registre à updater : %s\n",reg_nom);
+			token=get_next_token(inter); //On récupère la valeur à donner
+			if (token==NULL) return 1;
+		
+			for (reg_num = 0; reg_num < NB_REG; ++reg_num)
+			{
+				//On parcourt le tableau pour sélectionner le registre qui nous intéressent
+				if (strcmp(reg_nom,param.p_registre[reg_num].name)==0)	
+				{
+					if (is_integer(token))
+					{
+						param.p_registre[reg_num].content=atoi(token);
+						return 0;
+					}
+
+					if (is_hexa(token))
+					{
+						param.p_registre[reg_num].content=convertir_string_add(token);
+						return 0;
+					}
+
+					WARNING_MSG("Valeur non correcte !");
+				}
+			}
+
+			WARNING_MSG("Erreur : Registre inconnu\n");
+			return 1;
+		}
+
+
+		return 1;
 	}
-	else return 1;
+
+	return 1;
 	
 }
 
@@ -954,7 +1345,7 @@ int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
         return disasmcmd(inter);
     }
     else if(strcmp(token, "set") == 0) {
-        return setcmd(inter);
+        return setcmd(inter,param);
     }
     else if(strcmp(token, "assert") == 0) {
         return assertcmd(inter);

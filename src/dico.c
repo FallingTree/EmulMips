@@ -33,7 +33,7 @@ int visualiser_tab_instructions(Instruction* tab, int n)
 
 	for (i = 0; i<n; ++i)
 	{
-		printf("%s : \n Masque : %8x \n Mnémonique : %8x\n Type : %s \n",tab[i].nom,tab[i].masque,tab[i].mnemonique,tab[i].type);
+		printf("%s : \n Masque : 0x%8x \n Mnémonique : 0x%8x\n Type : %s \n",tab[i].nom,tab[i].masque,tab[i].mnemonique,tab[i].type);
 		printf(" Zones utilisées : ");
 		for (j = 0; j < 5; ++j)
 		{
@@ -62,7 +62,6 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier){
 	unsigned int masque;
 	unsigned int mnemonique;
 	char type[512];
-	int* var_op;
 	int nb_operandes;
 
 	
@@ -87,6 +86,8 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier){
 
 	// On saute la 3e ligne
 	fgets(chaine_lue, 100, dico);
+	fgets(chaine_lue, 100, dico);
+	fgets(chaine_lue, 100, dico);
 	//printf("Chaine lue : %s",chaine_lue); //debug
 
 
@@ -96,16 +97,21 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier){
 		//On alloue la mémoire dans la table des instructions pour le tableau var_op
 		(*p_tab_instruction)[i].var_op=calloc(6,sizeof(*((*p_tab_instruction)[i].var_op)));
 
-		fgets(chaine_lue, 100, dico);
-		printf("Chaine lue : %s",chaine_lue); //debug
 
+		//On lit la ligne du fichier
+		fgets(chaine_lue, 100, dico);
+		//printf("Chaine lue : %s",chaine_lue); //debug
+
+		//On récupère les informations utiles
 		sscanf(chaine_lue,"%s %x %x %s %d %d %d %d %d %d %d",nom,&masque,&mnemonique,type,(*p_tab_instruction)[i].var_op+RS,(*p_tab_instruction)[i].var_op+RT,(*p_tab_instruction)[i].var_op+RD,(*p_tab_instruction)[i].var_op+SA,(*p_tab_instruction)[i].var_op+IMMEDIATE,(*p_tab_instruction)[i].var_op+ADDRESS,&nb_operandes);
 
 
 		//printf("%s %x %x %s %d %d %d %d %d %d\n",nom,masque,mnemonique,type,(*p_tab_instruction)[i].var_op[RS],(*p_tab_instruction)[i].var_op[RT],(*p_tab_instruction)[i].var_op[RD],(*p_tab_instruction)[i].var_op[SA],(*p_tab_instruction)[i].var_op[IMMEDIATE],(*p_tab_instruction)[i].var_op[ADDRESS]);
 
+
+		//On remplit le tableau des instructions
 		(*p_tab_instruction)[i].nom=strdup(nom);
-		printf("%s\n",(*p_tab_instruction)[i].nom); //debug
+		//printf("%s\n",(*p_tab_instruction)[i].nom); //debug
 		(*p_tab_instruction)[i].masque=masque;
 		(*p_tab_instruction)[i].mnemonique=mnemonique;
 		(*p_tab_instruction)[i].type=strdup(type);
@@ -115,7 +121,7 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier){
 	}
 	
 
-	visualiser_tab_instructions(*p_tab_instruction,nb_instructions); //debug
+	//visualiser_tab_instructions(*p_tab_instruction,nb_instructions); //debug
 	
 	
 	fclose(dico);
