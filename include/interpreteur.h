@@ -42,14 +42,19 @@ Toute autre valeur signifie qu'une erreur est survenue
 
 
 
-/* mode d'interaction avec l'interpreteur (exemple)*/
+/* mode d'interaction avec l'interpreteur */
 typedef enum {INTERACTIF,SCRIPT,DEBUG_MODE} inter_mode;
+
+/* état de run */
+typedef enum {NOT_STARTED, RUN, TERM, PAUSE} run_etat;
+
 
 /* structure passée en parametre qui contient la connaissance de l'état de
  * l'interpréteur 
  */
 typedef struct {
     inter_mode mode;
+    run_etat etat;
     char input[MAX_STR];
     char * from;
     char first_token;
@@ -68,11 +73,11 @@ int testcmd(interpreteur inter);
 int exitcmd(interpreteur inter);
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 int dispcmd(interpreteur inter,pm_glob param);
-int disasmcmd(interpreteur inter,pm_glob param);
 int setcmd(interpreteur inter,pm_glob param);
 int assertcmd (interpreteur inter,pm_glob param);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);
+int runcmd(interpreteur inter, pm_glob param);
 void stepcmd (interpreteur inter);
 int breakcmd(interpreteur inter, pm_glob param);
 void helpcmd(interpreteur inter);

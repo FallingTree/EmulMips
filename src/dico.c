@@ -108,7 +108,7 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 		//printf("%s %x %x %s %d %d %d %d %d %d\n",nom,masque,mnemonique,type,(*p_tab_instruction)[i].var_op[RS],(*p_tab_instruction)[i].var_op[RT],(*p_tab_instruction)[i].var_op[RD],(*p_tab_instruction)[i].var_op[SA],(*p_tab_instruction)[i].var_op[IMMEDIATE],(*p_tab_instruction)[i].var_op[ADDRESS]);
 
 		(*p_tab_instruction)[i].nom=strdup(nom);
-		printf("%s\n",(*p_tab_instruction)[i].nom); //debug
+		//printf("%s\n",(*p_tab_instruction)[i].nom); //debug
 		(*p_tab_instruction)[i].masque=masque;
 		(*p_tab_instruction)[i].mnemonique=mnemonique;
 		(*p_tab_instruction)[i].type=strdup(type);

@@ -117,7 +117,7 @@ void init_reg(reg *registre)
     registre[28].name=strdup("$gp");
 
     registre[29].content=0;
-    registre[29].name=strdup("$sp");
+    registre[29].name=strdup("sp");
 
     registre[30].content=0;
     registre[30].name=strdup("$fp");
@@ -126,13 +126,13 @@ void init_reg(reg *registre)
     registre[31].name=strdup("$ra");
 
     registre[32].content=0;
-    registre[32].name=strdup("$hi");
+    registre[32].name=strdup("hi");
 
     registre[33].content=0;
-    registre[33].name=strdup("$l0");
+    registre[33].name=strdup("l0");
 
     registre[34].content=0;
-    registre[34].name=strdup("$pc");
+    registre[34].name=strdup("pc");
 }
 
 

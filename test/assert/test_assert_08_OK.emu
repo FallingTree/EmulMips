@@ -3,6 +3,5 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-load boucle.o
-set mem word 0x500c 32
-assert word 0x500c 32
+set reg $t1 0x555
+assert reg $t1 0x555

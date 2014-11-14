@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-set reg $zero 0xAAFFBBDG
+set reg $a2 0xAAFFBBDG

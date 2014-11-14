@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-set reg pc 0xAAFFBBDD
+set reg pc 1532

@@ -48,6 +48,8 @@ typedef struct {
     char      *name;
 } reg;
 
+
+//Structure d'une instruction du dictionnaire
 typedef struct 
 {
 	char* nom;
@@ -59,6 +61,20 @@ typedef struct
 
 } Instruction;
 
+//Structure d'une instruction désassemblée de type quelconque
+typedef union {
+	char *nom;
+	char *type;
+	unsigned int rd;
+	unsigned int rs;
+	unsigned int rt;
+	unsigned int sa;
+	unsigned int immediate;
+	unsigned int offset;
+	unsigned int target;
+} INST;
+
+
 
 typedef struct {
     mem *p_memory;
@@ -67,6 +83,7 @@ typedef struct {
     stab *p_symtab;
     Instruction **p_tab_instructions;
     int nb_instr;
+    INST ** p_tab_instructions_disasm;
 } pm_glob;
 
 #define R__   1

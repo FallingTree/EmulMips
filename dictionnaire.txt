@@ -1,5 +1,5 @@
 Dictionnaire des instructions MIPS :
-Nombre d’instructions : 42
+Nombre d’instructions : 41
 
 Nom/Masque/Mnémonique/Type/Zones utilisées/Nombre d'opérandes
 

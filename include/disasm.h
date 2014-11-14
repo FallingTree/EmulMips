@@ -1,27 +1,23 @@
+
 //----------------------------------------------------------------------------------------------------------------  
-// File : liste.h
+// File : disasm.h 
 // Authors : Ammar Mian, Ambre Davat
 // Avec participation de François Cayre, Nicolas Castagné, François Portet
 //
 // Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
-// Définition des types d'instruction MIPS
+// Fichier contenant les fonctions utiles à l'utilisation de l'interpréteur ainsi que les commandes de celui-ci
 //
 //---------------------------------------------------------------------------------------------------------------- 
 
+#ifndef _DISASM_H_
+#define _DISASM_H_
 
-#ifndef _DICO_H_
-#define _DICO_H_
 #include "mem.h"
+#include "dico.h"
+#include "interpreteur.h"
 
+int disasmcmd(interpreteur inter,pm_glob param);
+unsigned int decode_instructions(pm_glob param);
 
+#endif /* _DISASM_H_ */
 
-//Permet de se retrouver dans le tableau des variables des opérateurs
-enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET};
-
-
-int visualiser_tab_instructions(Instruction* tab, int n);
-int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param);
-
-
-
-#endif /* _DICO_H_ */
