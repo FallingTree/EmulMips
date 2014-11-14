@@ -1,0 +1,7 @@
+#-------
+#TEST_RETURN_CODE=PASS     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+set reg $3 1
+assert reg $3 1

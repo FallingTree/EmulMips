@@ -4,4 +4,4 @@
 #-------
 
 load procedure.o
-disasm 0x1998:Ox200d
+disasm 0x3004:0x3400

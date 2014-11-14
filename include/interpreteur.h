@@ -20,7 +20,7 @@
 #include "elf/elf.h"
 #include "elf/syms.h"
 #include "mem.h"
-
+#include "is_type.h"
 
 
 /* prompt du mode shell interactif */
@@ -40,8 +40,6 @@ Toute autre valeur signifie qu'une erreur est survenue
 #define CMD_UNKOWN_RETURN_VALUE -2
 */
 
-/* type de token (exemple) */
-enum {HEXA,INTEGER32,INTEGER8,INTEGER,OBJET,REG,RANGE,UNKNOWN};
 
 
 /* mode d'interaction avec l'interpreteur (exemple)*/
@@ -59,25 +57,20 @@ typedef struct {
 
 void decouper_word_hexa(char* chaine, byte** tab);
 int trouver_seg_adresse(int adresse,pm_glob param);
+word trouver_mot_adresse(int adresse, pm_glob param);
+byte trouver_byte_adresse(int adresse, pm_glob param);
 int convertir_string_add(char* string);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);
 char* get_next_token(interpreteur inter);
-int is_hexa(char* chaine);
-int is_integer32(char* chaine);
-int is_integer8(char* chaine) ;
-int is_objet(char* chaine);
-int is_reg(char* chaine);
-int is_range(char* chaine);
-int get_type(char* chaine);
 int _testcmd(int hexValue);
 int testcmd(interpreteur inter);
 int exitcmd(interpreteur inter);
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 int dispcmd(interpreteur inter,pm_glob param);
-int disasmcmd(interpreteur inter);
+int disasmcmd(interpreteur inter,pm_glob param);
 int setcmd(interpreteur inter,pm_glob param);
-int assertcmd (interpreteur inter);
+int assertcmd (interpreteur inter,pm_glob param);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);
 void stepcmd (interpreteur inter);

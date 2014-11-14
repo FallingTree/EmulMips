@@ -8,8 +8,10 @@
 //
 //---------------------------------------------------------------------------------------------------------------- 
 
+
 #ifndef _DICO_H_
 #define _DICO_H_
+#include "mem.h"
 
 
 //Définition des structures d'instructions en champ de bits
@@ -18,7 +20,7 @@ typedef struct { unsigned int opcode:6, rs:5, rt:5, immediate:16;} SI;
 typedef struct { unsigned int opcode:6, adress:26;} ST;
 
 //Permet de se retrouver dans le tableau des variables des opérateurs
-enum {RS=0,RT,RD,SA,IMMEDIATE,ADDRESS};
+enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET};
 
 
 //Structure d'union pour contenir une instruction sous toutes ses formes possibles
@@ -30,19 +32,9 @@ typedef union {
 	unsigned char octet[4];
 } INST;
 
-typedef struct 
-{
-	char* nom;
-	unsigned int masque;
-	unsigned int mnemonique;
-	char* type;
-	int* var_op;
-	int nb_operandes;
-
-} Instruction;
 
 int visualiser_tab_instructions(Instruction* tab, int n);
-int load_dico(Instruction** p_tab_instruction, char* nom_fichier);
+int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param);
 
 
 

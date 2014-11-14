@@ -1,0 +1,2 @@
+assert reg $v0 0
+assert reg $v0 1

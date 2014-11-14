@@ -167,7 +167,7 @@ int load (mem* memory, stab* symtab, FILE* pf_elf,char* nom_fichier)
         if (is_in_symbols(section_names[i],*symtab)) {
             elf_load_section_in_memory(pf_elf,*memory, section_names[i],segment_permissions[i],next_segment_start);
             next_segment_start+= (((*memory)->seg[j].size._32+0x1000)>>12 )<<12; // on arrondit au 1k suppérieur
-            print_segment_raw_content(&(*memory)->seg[j]);
+            //print_segment_raw_content(&(*memory)->seg[j]);
             j++;
         }
     }

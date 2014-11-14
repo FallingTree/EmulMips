@@ -1,0 +1,7 @@
+#-------
+#TEST_RETURN_CODE=PASS     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+set reg $a0 -29
+assert reg $a0 -29

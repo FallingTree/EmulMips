@@ -1,0 +1,6 @@
+#-------
+#TEST_RETURN_CODE=FAIL     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+assert word 0x99999999999999999999999999 2

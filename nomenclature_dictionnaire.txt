@@ -1,20 +1,20 @@
 Nomenclature dictionnaire :
 
-Il n'y a que deux types de masque (+celui de BSHFL)
+Il n'y a que deux types de masque (+celui de SEB)
 (6----6) : 0xFC00003F
 (6-----) : 0xFC000000
 
-Pour calculer les mnémoniques (sauf cas particulier de BSHFL)
+Pour calculer les mnémoniques (sauf cas particulier de SEB)
 1) prendre le code binaire du mnémoniques
 2) ajouter des 0 pour avoir un octet (au début ou à la fin selon la position du mnémonique)
 3) faire la conversion
 4) ajouter des 0 pour avoir 8 chiffres (avant ou après selon la position du mnémonique)
 
 
-rs rt rd special immediate adresse
+rs rt rd shift_amount immediate adresse offset 
 
 
-Ordre des indications de la zone utilisée : rs rt rd special immediate adresse
+Ordre des indications de la zone utilisée : rs rt rd shift_amount immediate target offset
 
 Type R :
 
@@ -29,7 +29,7 @@ Type I :
 ---------------------------------------------------------
 / 31 - 26 / 25 - 21 / 20 - 16 / 		15 - 0		    /
 ---------------------------------------------------------
- opcode      rs          rt               immediate
+ opcode      rs          rt               immediate/offset
 
 
 Type T :
@@ -37,6 +37,6 @@ Type T :
 ---------------------------------------------------------
 / 31 - 26 / 			       25 - 0                   /
 ---------------------------------------------------------
-  opcode      				     address                 
+  opcode      			   target                 
 
 

@@ -67,9 +67,9 @@ int main ( int argc, char *argv[] ) {
    Instruction* tab_instructions;
    param.p_tab_instructions=&tab_instructions;
    int load_ok;
-   load_ok=load_dico(param.p_tab_instructions,"dictionnaire.txt");
+   load_ok=load_dico(param.p_tab_instructions,"dictionnaire.txt", param);
 
-    
+
 
 //Initialisation de l'interpréteur
 
@@ -149,6 +149,7 @@ int main ( int argc, char *argv[] ) {
             exit(EXIT_SUCCESS);
         }
     }
+
     /* tous les cas de sortie du programme sont gérés plus haut*/
     ERROR_MSG("SHOULD NEVER BE HERE\n");
 }

@@ -1,0 +1,389 @@
+Bienvenue dans l'Emulateur MIPS !
+Nombre d'instructions : 42
+Chaine lue : ADD 0xFC00003F 0x00000020 R 1 1 1 0 0 0 0 3		
+ADD
+Chaine lue : ADDI 0xFC000000 0x20000000 I 1 1 0 0 1 0 0 2		
+ADDI
+Chaine lue : ADDIU 0xFC000000 0x24000000 I 1 1 0 0 1 0 0 3
+ADDIU
+Chaine lue : ADDU 0xFC00003F 0x00000021 R 1 1 1 0 0 0 0 3
+ADDU
+Chaine lue : AND 0xFC00003F 0x00000024 R 1 1 1 0 0 0 0 3
+AND
+Chaine lue : ANDI 0xFC000000 0x30000000 I 1 1 0 0 1 0 0 3
+ANDI
+Chaine lue : BEQ 0xFC000000 0x10000000 I 1 1 0 0 0 0 1 3
+BEQ
+Chaine lue : BGEZ 0xFC000000 0x10000000 I 1 0 0 0 0 0 1 2
+BGEZ
+Chaine lue : BGTZ 0xFC000000 0x04000000 I 1 0 0 0 0 0 1 2
+BGTZ
+Chaine lue : BLEZ 0xFC000000 0x18000000 I 1 0 0 0 0 0 1 2
+BLEZ
+Chaine lue : BLTZ 0xFC000000 0x40000000 I 1 0 0 0 0 0 1 2
+BLTZ
+Chaine lue : BNE 0xFC000000 0x14000000 I 1 1 0 0 0 0 1 3
+BNE
+Chaine lue : BREAK 0xFC00003F 0x0000000D I 0 0 0 1 0 0 1 0 2
+BREAK
+Chaine lue : DIV 0xFC00003F 0x0000001a R 1 1 0 0 0 0 0 2
+DIV
+Chaine lue : J 0xFC000000 0x08000000 T 0 0 0 0 0 1 0 1
+J
+Chaine lue : JAL 0xFC000000 0x0c000000 T 0 0 0 0 0 1 0 1
+JAL
+Chaine lue : JALR 0xFC00003F 0x00000009 R 1 0 1 0 0 0 0 2
+JALR
+Chaine lue : JR 0xFC00003F 0x00000008 R 1 0 0 0 0 0 0 1
+JR
+Chaine lue : LB 0xFC000000 0x80000000 I 0 1 0 0 0 0 1 2 
+LB
+Chaine lue : LBU 0xFC000000 0x90000000 I 0 1 0 0 0 0 1 2
+LBU
+Chaine lue : LUI 0xFC000000 0x3c000000 I 0 1 0 0 1 0 0 2
+LUI
+Chaine lue : LW 0xFC000000 0x8c000000 I 0 1 0 0 0 0 1 2
+LW
+Chaine lue : MFHI 0xFC00003F 0x00000010 R 0 0 1 0 0 0 0 1
+MFHI
+Chaine lue : MFLO 0xFC00003F 0x00000012 R 0 0 1 0 0 0 0 1
+MFLO
+Chaine lue : MULT 0xFC00003F 0x00000018 R 1 1 0 0 0 0 0 2
+MULT
+Chaine lue : OR 0xFC00003F 0x00000025 R 1 1 1 0 0 0 0 3
+OR
+Chaine lue : ORI 0xFC000000 0x34000000 I 1 1 0 0 1 0 0 3
+ORI
+Chaine lue : SB 0xFC000000 0xa0000000 I 0 1 0 0 0 0 1 2
+SB
+Chaine lue : SEB 0xfc0007ff 0xf8000840 R 0 1 1 1 0 0 0 3   
+SEB
+Chaine lue : SLL 0xFC00003F 0x00000000 R 1 1 0 1 0 0 0 3   
+SLL
+Chaine lue : SLT 0xFC00003F 0x0000002a R 1 1 1 0 0 0 0 3
+SLT
+Chaine lue : SLTI 0xFC000000 0x28000000 I 1 1 0 0 1 0 0 3
+SLTI
+Chaine lue : SLTIU 0xFC000000 0x2c000000 I 1 1 0 0 1 0 0 3
+SLTIU
+Chaine lue : SLTU 0xFC00003F 0x0000002b R 1 1 1 0 0 0 0 3
+SLTU
+Chaine lue : SRA 0xFC00003F 0x00000003 R 1 1 0 1 0 0 0 3	
+SRA
+Chaine lue : SRL 0xFC00003F 0x00000002 R 1 1 0 1 0 0	0 3	
+SRL
+Chaine lue : SUB 0xFC00003F 0x00000022 R 1 1 1 0 0 0 0 3
+SUB
+Chaine lue : SUBU 0xFC00003F 0x0000023 R 1 1 1 0 0 0 0 3
+SUBU
+Chaine lue : SW 0xFC000000 0xac000000 I 0 1 0 0 0 0 1 2
+SW
+Chaine lue : SYSCALL 0xFC00003F 0x0000000c R 0 0 0 0 0 0 0 0
+SYSCALL
+Chaine lue : XOR 0xFC00003F 0x00000026 R 1 1 1 0 0 0 0 3
+XOR
+Chaine lue : XOR 0xFC00003F 0x00000026 R 1 1 1 0 0 0 0 3
+XOR
+---------------------- Tableau des instructions -------------------------------
+ 
+ADD : 
+ Masque : fc00003f 
+ Mnémonique :       20
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+ADDI : 
+ Masque : fc000000 
+ Mnémonique : 20000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 2
+ 
+ADDIU : 
+ Masque : fc000000 
+ Mnémonique : 24000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 3
+ 
+ADDU : 
+ Masque : fc00003f 
+ Mnémonique :       21
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+AND : 
+ Masque : fc00003f 
+ Mnémonique :       24
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+ANDI : 
+ Masque : fc000000 
+ Mnémonique : 30000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 3
+ 
+BEQ : 
+ Masque : fc000000 
+ Mnémonique : 10000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 0 0 1 
+ Nombre d'opérandes : 3
+ 
+BGEZ : 
+ Masque : fc000000 
+ Mnémonique : 10000000
+ Type : I 
+ Zones utilisées : 1 0 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+BGTZ : 
+ Masque : fc000000 
+ Mnémonique :  4000000
+ Type : I 
+ Zones utilisées : 1 0 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+BLEZ : 
+ Masque : fc000000 
+ Mnémonique : 18000000
+ Type : I 
+ Zones utilisées : 1 0 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+BLTZ : 
+ Masque : fc000000 
+ Mnémonique : 40000000
+ Type : I 
+ Zones utilisées : 1 0 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+BNE : 
+ Masque : fc000000 
+ Mnémonique : 14000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 0 0 1 
+ Nombre d'opérandes : 3
+ 
+BREAK : 
+ Masque : fc00003f 
+ Mnémonique :        d
+ Type : I 
+ Zones utilisées : 0 0 0 1 0 0 1 
+ Nombre d'opérandes : 0
+ 
+DIV : 
+ Masque : fc00003f 
+ Mnémonique :       1a
+ Type : R 
+ Zones utilisées : 1 1 0 0 0 0 0 
+ Nombre d'opérandes : 2
+ 
+J : 
+ Masque : fc000000 
+ Mnémonique :  8000000
+ Type : T 
+ Zones utilisées : 0 0 0 0 0 1 0 
+ Nombre d'opérandes : 1
+ 
+JAL : 
+ Masque : fc000000 
+ Mnémonique :  c000000
+ Type : T 
+ Zones utilisées : 0 0 0 0 0 1 0 
+ Nombre d'opérandes : 1
+ 
+JALR : 
+ Masque : fc00003f 
+ Mnémonique :        9
+ Type : R 
+ Zones utilisées : 1 0 1 0 0 0 0 
+ Nombre d'opérandes : 2
+ 
+JR : 
+ Masque : fc00003f 
+ Mnémonique :        8
+ Type : R 
+ Zones utilisées : 1 0 0 0 0 0 0 
+ Nombre d'opérandes : 1
+ 
+LB : 
+ Masque : fc000000 
+ Mnémonique : 80000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+LBU : 
+ Masque : fc000000 
+ Mnémonique : 90000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+LUI : 
+ Masque : fc000000 
+ Mnémonique : 3c000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 1 0 0 
+ Nombre d'opérandes : 2
+ 
+LW : 
+ Masque : fc000000 
+ Mnémonique : 8c000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+MFHI : 
+ Masque : fc00003f 
+ Mnémonique :       10
+ Type : R 
+ Zones utilisées : 0 0 1 0 0 0 0 
+ Nombre d'opérandes : 1
+ 
+MFLO : 
+ Masque : fc00003f 
+ Mnémonique :       12
+ Type : R 
+ Zones utilisées : 0 0 1 0 0 0 0 
+ Nombre d'opérandes : 1
+ 
+MULT : 
+ Masque : fc00003f 
+ Mnémonique :       18
+ Type : R 
+ Zones utilisées : 1 1 0 0 0 0 0 
+ Nombre d'opérandes : 2
+ 
+OR : 
+ Masque : fc00003f 
+ Mnémonique :       25
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+ORI : 
+ Masque : fc000000 
+ Mnémonique : 34000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 3
+ 
+SB : 
+ Masque : fc000000 
+ Mnémonique : a0000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+SEB : 
+ Masque : fc0007ff 
+ Mnémonique : f8000840
+ Type : R 
+ Zones utilisées : 0 1 1 1 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SLL : 
+ Masque : fc00003f 
+ Mnémonique :        0
+ Type : R 
+ Zones utilisées : 1 1 0 1 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SLT : 
+ Masque : fc00003f 
+ Mnémonique :       2a
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SLTI : 
+ Masque : fc000000 
+ Mnémonique : 28000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 3
+ 
+SLTIU : 
+ Masque : fc000000 
+ Mnémonique : 2c000000
+ Type : I 
+ Zones utilisées : 1 1 0 0 1 0 0 
+ Nombre d'opérandes : 3
+ 
+SLTU : 
+ Masque : fc00003f 
+ Mnémonique :       2b
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SRA : 
+ Masque : fc00003f 
+ Mnémonique :        3
+ Type : R 
+ Zones utilisées : 1 1 0 1 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SRL : 
+ Masque : fc00003f 
+ Mnémonique :        2
+ Type : R 
+ Zones utilisées : 1 1 0 1 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SUB : 
+ Masque : fc00003f 
+ Mnémonique :       22
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SUBU : 
+ Masque : fc00003f 
+ Mnémonique :       23
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+SW : 
+ Masque : fc000000 
+ Mnémonique : ac000000
+ Type : I 
+ Zones utilisées : 0 1 0 0 0 0 1 
+ Nombre d'opérandes : 2
+ 
+SYSCALL : 
+ Masque : fc00003f 
+ Mnémonique :        c
+ Type : R 
+ Zones utilisées : 0 0 0 0 0 0 0 
+ Nombre d'opérandes : 0
+ 
+XOR : 
+ Masque : fc00003f 
+ Mnémonique :       26
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+XOR : 
+ Masque : fc00003f 
+ Mnémonique :       26
+ Type : R 
+ Zones utilisées : 1 1 1 0 0 0 0 
+ Nombre d'opérandes : 3
+ 
+--------------------------------------------------------------------------------
+La commande s'est exécutée correctement
+La commande s'est exécutée correctement
+La commande s'est exécutée correctement
+La commande s'est exécutée correctement
+La commande s'est exécutée correctement
+Fermeture du programme : Au revoir !

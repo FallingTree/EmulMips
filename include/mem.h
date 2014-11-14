@@ -1,4 +1,4 @@
-    //----------------------------------------------------------------------------------------------------------------  
+//----------------------------------------------------------------------------------------------------------------  
 // File : mem.h
 // Authors : Ammar Mian, Ambre Davat
 // Avec participation de François Cayre, Nicolas Castagné, François Portet
@@ -20,7 +20,7 @@ extern "C" {
 #include "common/types.h"
 #include "elf/syms.h"
 #include "common/liste.h"
-#include "dico.h"
+
 
 
 
@@ -38,7 +38,7 @@ typedef struct {
 } segment;
 
 typedef struct {
-    vsize       extent;
+    vsize       extent; 
     uint32_t    nseg;
     segment    *seg;
 } *mem;
@@ -48,12 +48,25 @@ typedef struct {
     char      *name;
 } reg;
 
+typedef struct 
+{
+	char* nom;
+	unsigned int masque;
+	unsigned int mnemonique;
+	char* type;
+	int* var_op;
+	int nb_operandes;
+
+} Instruction;
+
+
 typedef struct {
     mem *p_memory;
     reg *p_registre;
     Liste_int_t *p_liste_bp; 
     stab *p_symtab;
-    Instruction **p_tab_instructions; 
+    Instruction **p_tab_instructions;
+    int nb_instr;
 } pm_glob;
 
 #define R__   1

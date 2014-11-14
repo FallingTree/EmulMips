@@ -1,0 +1,7 @@
+#-------
+#TEST_RETURN_CODE=PASS     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+set mem word 0x500c 32
+assert word 0x500c 32
