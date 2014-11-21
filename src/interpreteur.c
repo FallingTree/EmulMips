@@ -21,7 +21,7 @@
  #include "is_type.h"
  #include "load.h"
  #include "disasm.h"
-
+ #include "emul.h"
 
 //Fonction permettant de découper un mot en hexadécimal en un tableau de byte correspondants aux parties (de 2) du mot
 
@@ -385,13 +385,14 @@ int exitcmd(interpreteur inter) {
 
 
 
-/*Pour l'instant les fonctions se contentent de reconnaîre
-*les bons parametres d'entree
-*/
-
-
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 	
+	unsigned int adrtext;
+	int rload;
+	int i_text;
+	unsigned int size_text ;
+
+
 	//On récupère le nom du fichier à ouvrir
 	char *nom_fichier = get_next_token (inter);
 
@@ -402,8 +403,16 @@ int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 		return 1;
 	}
 	if (is_objet(nom_fichier)) 
-	{	
-		return load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
+	{		
+		rload = load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
+		if (rload != 0) return 1;
+		
+		if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+		
+		param.p_registre[34].content = adrtext;	//Initialisation du registre pc
+		*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
+		stab32_print(*param.p_symtab);	//Affichage de la table des symboles
+		return 0;
 		
 	}
 	else 
@@ -632,7 +641,7 @@ int setcmd(interpreteur inter,pm_glob param)
 
 				if (is_hexa(token)){
 
-				int valeur = convertir_string_add(token);
+				valeur = convertir_string_add(token);
 				if (!(valeur<=127)&&(valeur>=-128)) return 1;
 
 				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
@@ -730,7 +739,7 @@ int setcmd(interpreteur inter,pm_glob param)
 			if (is_integer(token))
 			{
 				param.p_registre[reg_num].content=atoi(token);
-
+				
 				return 0;
 			}
 
@@ -806,7 +815,7 @@ int assertcmd (interpreteur inter, pm_glob param)
 	byte b; 
 
 	char ** endptr = NULL;
-	long int val ; //valeur passée en paramètre
+	unsigned int val ; //valeur passée en paramètre
  
 	char *token = NULL;   
 	token = get_next_token (inter);
@@ -869,7 +878,7 @@ int assertcmd (interpreteur inter, pm_glob param)
 			if (is_integer(token)||is_hexa(token)) 
 			{	
 				//On cherche l'indice du registre dont on a le nom
-				while ((i<=34) & test)
+				while ((i<=34) && test)
 				{
 					test = strcmp(r,registre[i].name); //test s'annule si et seulement si la chaîne rmo et le nom du registre sont égaux
 					i++;
@@ -878,8 +887,6 @@ int assertcmd (interpreteur inter, pm_glob param)
 				if (is_integer(token)) val = strtol(token,endptr,10); 
  				if (is_hexa(token)) val = strtol(token,endptr,16); 
 				if (val<0) val = 0xFFFFFFFF+val; //Les registres contiennent des entiers non signés.
-
-
 				if (registre[i-1].content==val) //teste si le registre a la valeur val
 				{
 					printf("Oui\n");
@@ -997,32 +1004,16 @@ void resumecmd (interpreteur inter)
 }
 
 
-int emul (INST inst)
-{
-
-	if (strcmp(inst.nom,"ADD")==0)
-		{
-			return 0;
-		}
-	else 
-		{
-			WARNING_MSG("Execution de l'instruction %s non définie", inst.nom);
-			return 1;
-		}	
-
-}
-
-
-
 int runcmd(interpreteur inter, pm_glob param) 
 {
-
 	mem memory = *(param.p_memory);
-
-	reg *registre = param.p_registre;
 	char *token = NULL;   
 	token = get_next_token (inter);
-	int val ;
+	unsigned int val ;
+	unsigned int adrtext;
+	unsigned int size_text;
+	int i_text;
+
 
 
 	//On vérifie qu'un fichier a été chargé en mémoire
@@ -1032,33 +1023,22 @@ int runcmd(interpreteur inter, pm_glob param)
 		return 1;
 	}
 
-	//On récupère le numéro du segment .text dans la mémoire
-	int i_text=0;
-	if (memory->seg[i_text].name==NULL) 
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+
+	//Résolution du cas où deux run sont lancés l'un à la suite de l'autre.
+	//L'état NOT_STARTED est alors sauté	
+
+	if (*param.p_last_disasm!=0)
 	{
-		WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-		return 1;
-	}		
-	while (strcmp(memory->seg[i_text].name,".text")!=0)
-	{
-		i_text=i_text+1;
-		if (i_text>NB_SECTIONS) 
-		{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-			return 1;
+		if (param.p_registre[34].content > adrtext)
+		{	
+				
+			printf("Réinitialisation des registres, suppression des breakpoints\n");
+			param.p_registre[34].content = adrtext;
+			*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
 		}
-	}
 
-	//Récupération de la valeur de l'adresse du segment .text
-
-	unsigned int adrtext;
-	switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-	{
-           case 32 :
-		adrtext = memory->seg[i_text].start._32;
-               	break;
-            default :
-               	return 1;
-        }
+	}	
 
 	//Vérification que l'adresse passée éventuellement en paramètre est correcte
 
@@ -1071,24 +1051,89 @@ int runcmd(interpreteur inter, pm_glob param)
 			WARNING_MSG("Cette adresse n'est pas multiple de 4\n");		
 			return 1;
 		}
+		if ((val<adrtext)||(val > adrtext + 0x00001000))
+
+		{
+			WARNING_MSG("L'adresse n'appartient pas au segment .text\n");
+			return 1;
+		}
+	
 		param.p_registre[34].content = val; //On charge le registre pc avec l'adresse fournie en paramètre
 
 	}
 
-
 	//Modification de l'état de l'interpréteur
-	inter->etat = RUN;
-
-		
+	inter->etat = RUN;	
 
 	return 0;
 	
 
 }
-
-void stepcmd (interpreteur inter)
+ 
+int stepcmd (interpreteur inter, pm_glob param)
 {
 	
+	mem memory = *(param.p_memory);
+	char *token = NULL;  
+	int i_text=0;
+	int resu_emul;
+	unsigned int adrtext;	
+	unsigned int val_pc;
+	unsigned int size_text;
+	reg *registre = param.p_registre;
+	INST instruction;
+
+	//On vérifie qu'un fichier a été chargé en mémoire
+	if (memory==NULL)
+	{
+  		WARNING_MSG("Il faut d'abord charger un fichier objet\n");
+		return 1;
+	}	
+
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+	
+
+	//Résolution du cas où l'état NOT_STARTED est sauté	
+
+	if (*param.p_last_disasm!=0)
+	{
+		if (param.p_registre[34].content > adrtext)
+		{	
+				
+			printf("Réinitialisation des registres, suppression des breakpoints\n");
+			param.p_registre[34].content = adrtext;
+			*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
+		}
+
+	}	
+
+	size_text  = memory->seg[i_text].size._32 ; //Taille du segment .text
+
+	token = get_next_token (inter);
+
+	if (token==NULL) 
+	{
+		inter->etat = RUN ; 
+		return 0;
+	}					
+	if (strcmp(token,"into")==0)
+	{
+		inter->etat = PAUSE ; //Si l'etat de l'interpréteur est NOT_STARTED
+		
+		if (decode_instruction(&instruction, param)!=0) WARNING_MSG("Erreur lors du désassemblage des instructions");
+
+		resu_emul = emul(param, instruction); //Exécution de l'instruction
+	
+		registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
+		val_pc = registre[34].content;
+		
+		if (val_pc > *param.p_last_disasm) inter->etat = TERM; //Si on a atteint la fin du segment .text, term.
+										//Cela est possible grâce à step into
+
+		return 0;
+	}
+	return 1;	
+
 }
 
 int breakcmd(interpreteur inter,pm_glob param) {
@@ -1323,7 +1368,7 @@ int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
         return runcmd(inter, param);
     }
     else if(strcmp(token, "step") == 0) {
-        stepcmd(inter);
+        return stepcmd(inter, param);
     }
     else if(strcmp(token, "break") == 0) {
         return breakcmd(inter,param);

@@ -50,19 +50,11 @@ typedef struct {
 
 
 //Structure d'une instruction du dictionnaire
-typedef struct 
-{
-	char* nom;
-	unsigned int masque;
-	unsigned int mnemonique;
-	char* type;
-	int* var_op;
-	int nb_operandes;
 
-} Instruction;
 
 //Structure d'une instruction désassemblée de type quelconque
-typedef union {
+typedef struct 
+{
 	char *nom;
 	char *type;
 	unsigned int rd;
@@ -74,17 +66,30 @@ typedef union {
 	unsigned int target;
 } INST;
 
+typedef struct pm_gl pm_glob;
 
+typedef struct 
+{
+    char* nom;
+    unsigned int masque;
+    unsigned int mnemonique;
+    char* type;
+    int* var_op;
+    int nb_operandes;
+    int (*fonction)(unsigned int*,pm_glob,INST);
 
-typedef struct {
+} Instruction;
+
+struct pm_gl {
     mem *p_memory;
     reg *p_registre;
     Liste_int_t *p_liste_bp; 
     stab *p_symtab;
     Instruction **p_tab_instructions;
-    int nb_instr;
-    INST ** p_tab_instructions_disasm;
-} pm_glob;
+    int *p_nb_instr;
+    unsigned int *p_last_disasm;
+};
+
 
 #define R__   1
 #define RW_   2

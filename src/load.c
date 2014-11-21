@@ -8,6 +8,7 @@
 #include "common/bits.h"
 #include "common/notify.h"
  #include "load.h"
+ #include "mem.h"
 
 
 
@@ -160,7 +161,7 @@ int load (mem* memory, stab* symtab, FILE* pf_elf,char* nom_fichier)
 
     // allouer la memoire virtuelle (On met nsegments+2 pour prendre en compte la stack et Vsyscall qui n'est pas lu dans le fichier)
     *memory=init_mem(nsegments+2);
-
+	
     // Ne pas oublier d'allouer les differentes sections
     j=0;
     for (i=0; i<NB_SECTIONS; i++) {
@@ -202,6 +203,7 @@ int load (mem* memory, stab* symtab, FILE* pf_elf,char* nom_fichier)
                         (*memory)->seg[j].start._32 = 0;
                         return 1;
     }
+
 
     fclose(pf_elf);
     return 0;

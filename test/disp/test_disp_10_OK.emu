@@ -3,4 +3,4 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 load procedure.o
-disp mem 0xfffff000:Oxff7ff000
+disp mem 0xfffff000+5000

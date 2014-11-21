@@ -3,4 +3,5 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-run 0x500c
+load boucle.o
+run 0x3008

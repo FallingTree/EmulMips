@@ -20,11 +20,53 @@
  #include "load.h"
  #include "is_type.h"
 
+int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, unsigned int *p_size_text)
+{
+	mem memory = *(param.p_memory);
+
+	//On récupère le numéro du segment .text dans la mémoire
+	int i_text=0;
+	if (memory->seg[i_text].name==NULL) 
+	{
+		WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
+		return 1;
+	}		
+	while (strcmp(memory->seg[i_text].name,".text")!=0)
+	{
+		i_text=i_text+1;
+		if (i_text>NB_SECTIONS) 
+		{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
+			return 1;
+		}
+	}
+
+	//Récupération de la valeur de l'adresse du segment .text
+
+	unsigned int adrtext;
+	switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
+	{
+   	case 32 :
+		adrtext = memory->seg[i_text].start._32;
+        	break;
+    	default :
+        	return 1;
+    	}
+
+	*p_size_text = memory->seg[i_text].size._32 ; //On récupère la taille du segment .text
+
+	*p_i_text = i_text;
+	*p_adrtext = adrtext;
+	return 0;
+		
+}
 
 
 int disasmcmd(interpreteur inter,pm_glob param) 
 {
 	mem memory = *(param.p_memory);
+	int i_text=0;
+	unsigned int adrtext;
+	unsigned int size_text ;	
 
 	//On vérifie qu'un fichier a été chargé en mémoire
 	if (memory==NULL)
@@ -53,34 +95,8 @@ int disasmcmd(interpreteur inter,pm_glob param)
 		ad1 = strtok( token, ":+");
 		ad2 = strtok(NULL, ":+");	 
 
-		//On récupère le numéro du segment .text dans la mémoire
-		int i_text=0;
-		if (memory->seg[i_text].name==NULL) 
-		{
-			WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-			return 1;
-		}		
-		while (strcmp(memory->seg[i_text].name,".text")!=0)
-		{
-			i_text=i_text+1;
-			if (i_text>NB_SECTIONS) 
-			{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-				return 1;
-			}
-		}
+		if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1; //Récupération de l'adresse du segment .text et de son numéro
 
-		//Récupération de la valeur de l'adresse du segment .text
-
-		unsigned int adrtext;
-		switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-		{
-           	case 32 :
-			adrtext = memory->seg[i_text].start._32;
-                	break;
-            	default :
-                	return 1;
-            	}
-		
 		//Récupération des valeurs des adresses
 
 		int vad1 = convertir_string_add (ad1);
@@ -128,14 +144,8 @@ int disasmcmd(interpreteur inter,pm_glob param)
 			return 1;
 		}
 
-
 		//--------------------------Actions de la commande--------------------------//
 		
-
-
-		unsigned int size_text ;
-		size_text = memory->seg[i_text].size._32 ; //On récupère la taille du segment .text
-
 		int position = vad1 - adrtext; //Indice du tableau contenant les données de .text auquel se trouve le premier byte de l'instruction.
 
 		Instruction * tab_instructions = *(param.p_tab_instructions); //Tableau des mnémoniques
@@ -147,6 +157,11 @@ int disasmcmd(interpreteur inter,pm_glob param)
 		while ((position < size_text)&&(position<vad2-adrtext)) //Tant qu'on n'a pas atteint la fin des données .text, ni la fin de la plage
 		{ 
 			printf("%x :: ", adrtext + position); //Affichage de l'adresse virtuelle de l'instruction lue. 
+			
+			//Affichage éventuel d'une étiquette 
+			//.......
+				
+
 			motlu = trouver_mot_adresse(adrtext+position, param); //On lit l'instruction.
 			printf("%08x    ",motlu);
 
@@ -296,167 +311,132 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 
 
-//Cette fonction inspirée de disasm désassemble toutes les instructions du fichier .text et les range dans un tableau d'instructions sans les afficher.
-//Ce tableau est utilisé par la fonction run.
-//Pour connaître les opérandes utilisés, il faut se référer au nom de l'instruction, ce qui est possible au moment de l'exécution, mais demanderait un grand nombre de cas au moment de l'affichage, c'est pourquoi disasm n'utilise pas ce tableau.
+//Cette fonction inspirée de disasm désassemble l'instruction suivante du programme, c'est-à-dire celle qui se trouve à l'adresse pc
+//Pour connaître les opérandes utilisés, il faut se référer au nom de l'instruction, ce qui est possible au moment de l'exécution, mais demanderait un grand nombre de cas au moment de l'affichage.
 
-unsigned int decode_instructions(pm_glob param) 
+int decode_instruction(INST* p_instruction_disasm, pm_glob param) 
 {
 	mem memory = *(param.p_memory);
+	int i_text=0;
+	unsigned int adrtext;	
+	unsigned int val_pc = param.p_registre[34].content;
+	unsigned int size_text;
 
 	//On vérifie qu'un fichier a été chargé en mémoire
 	if (memory==NULL)
 	{
   		WARNING_MSG("Il faut d'abord charger un fichier objet/n");
-		return 0;
+		return 1;
 	}	
 
-
-	//On récupère le numéro du segment .text dans la mémoire
-	int i_text=0;
-	if (memory->seg[i_text].name==NULL) 
-	{
-		WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-		return 0;
-	}		
-	while (strcmp(memory->seg[i_text].name,".text")!=0)
-	{
-		i_text=i_text+1;
-		if (i_text>NB_SECTIONS) 
-		{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-			return 0;
-		}
-	}
-
-	//Récupération de la valeur de l'adresse du segment .text
-
-	unsigned int adrtext;
-	switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-	{
-       		case 32 :
-			adrtext = memory->seg[i_text].start._32;
-                	break;
-            	default :
-                	return 0;
-        }
-		
-	unsigned int size_text  = memory->seg[i_text].size._32 ; //Taille du segment .text
-
-	int position = 0; //Indice du tableau contenant les données de .text auquel se trouve le premier byte de l'instruction.
-
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+	
 	Instruction * tab_instructions = *(param.p_tab_instructions); //Tableau des mnémoniques
-	int nb_instructions = 41; //Nombre d'instructions du dictionnaire.
+	int nb_instructions = *param.p_nb_instr; //Nombre d'instructions du dictionnaire.
 
 	word motlu ;//L'instruction lue
 
-	int nb_disasm = size_text/4; //Nombre d'instructions à désassembler
-	param.p_tab_instructions_disasm=calloc(nb_disasm, sizeof(**param.p_tab_instructions_disasm)); //Allocation du tableau des instructions désassemblées
-	INST* tab_instructions_disasm = *param.p_tab_instructions_disasm;
-
-
-	while (position < size_text) //Tant qu'on n'a pas atteint la fin des données .text
-	{ 
-		motlu = trouver_mot_adresse(adrtext+position, param); //On lit l'instruction.
-			
-		int iinst = 0 ; //Indice du mnémonique lu dans le dictionnaire
-
-		unsigned int masque = tab_instructions[iinst].masque; //Premier masque du dictionnaire
-		unsigned int mnemo = tab_instructions[iinst].mnemonique; //Premier mnémonique du dictionnaire
-
-		int test = ((motlu & masque)!= mnemo);//Test qui définit l'arrêt de la boucle while (voir ci-après)
-
-		if (motlu==0) printf("NOP\n"); //Si on lit un mot nul, on sait que l'instruction est NOP.
-
-		else //----------------Reconnaissance des instructions autres que NOP---------------------
-			
-		{
-			//Comparaison du mot lu aux mnémoniques du dictionnaire avec une opération bit à bit
+	motlu = trouver_mot_adresse(val_pc, param); //On lit l'instruction à l'adresse contenue dans le registre pc.
 		
-			while (test &&(iinst<nb_instructions)) //Tant qu'on n'a pas trouvé le bon mnemonique (càd test = 0) 
-								//et qu'on n'a pas atteint la fin du tableau
-			{					
-				iinst++;
-				masque = tab_instructions[iinst].masque; //On passe au masque suivant
-				mnemo = tab_instructions[iinst].mnemonique; //On passe au mnémonique suivant
-					
-				test = ((motlu & masque)!= mnemo);
+	int iinst = 0 ; //Indice du mnémonique lu dans le dictionnaire
+
+	unsigned int masque = tab_instructions[iinst].masque; //Premier masque du dictionnaire
+	unsigned int mnemo = tab_instructions[iinst].mnemonique; //Premier mnémonique du dictionnaire
+
+	int test = ((motlu & masque)!= mnemo);//Test qui définit l'arrêt de la boucle while (voir ci-après)
+
+	if (motlu==0) //Si on lit un mot nul, on sait que l'instruction est NOP.
+	{
+		p_instruction_disasm->nom = "NOP";
 
 
-				//La boucle s'arrête si l'expression binaire du mnémonique apparaît dans l'expression binaire de bylu.
-				//On isole donc la partie de bylu correspondant au mnémonique grâce à une opération bit à bit, 
-				//puis on la compare au mnémonique.
+	}
 
-			}
+	else //----------------Reconnaissance des instructions autres que NOP---------------------
+		
+	{
+		//Comparaison du mot lu aux mnémoniques du dictionnaire avec une opération bit à bit
 	
-			//Détermination des opérandes
+		while (test &&(iinst<nb_instructions)) //Tant qu'on n'a pas trouvé le bon mnemonique (càd test = 0) 
+							//et qu'on n'a pas atteint la fin du tableau
+		{					
+			iinst++;
+			masque = tab_instructions[iinst].masque; //On passe au masque suivant
+			mnemo = tab_instructions[iinst].mnemonique; //On passe au mnémonique suivant
+				
+			test = ((motlu & masque)!= mnemo);
+
+
+			//La boucle s'arrête si l'expression binaire du mnémonique apparaît dans l'expression binaire de bylu.
+			//On isole donc la partie de bylu correspondant au mnémonique grâce à une opération bit à bit, 
+			//puis on la compare au mnémonique.
+
+		}
+
+		//Détermination des opérandes
+
+			
+		char* t = tab_instructions[iinst].type;
+		unsigned int rd, rs, rt, sa, immediate, target, offset = 0;
+
+		
+		if (iinst == nb_instructions) printf("Instruction inconnue\n");
+		else
+		{
+			if (strcmp(t,"R")==0)
+			{
+				rd = (motlu & 63488)/2048; // 63488 = 1111100000000000 en binaire, 
+								//on divise par 2048 = 2puis11 pour se ramener au numéro du registre
+				rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
+				rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
+				sa = (motlu & 1984)/ 64; //1984 = 11111000000 en binaire et 64 = 2puis6 				
+
+								
+			}
+			else if (strcmp(t,"I")==0)
+			{
+				rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
+				rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
+				immediate = (motlu & 65535) ;//65535 = 1111111111111111
+				offset = immediate *4 ;//Le codage de l'offset économise deux zéros, 
+						//car l'adresse d'un mot est forcément multiple de 4
+						//Pour avoir la bonne adresse, il faut donc multiplier par 4.
 
 				
-			char* t = tab_instructions[iinst].type;
-			unsigned int rd, rs, rt, sa, immediate, target, offset = 0;
-			reg *registre = param.p_registre;
 
-			
-			if (iinst == nb_instructions) printf("Instruction inconnue\n");
-			else
-			{
-				if (strcmp(t,"R")==0)
-				{
-					rd = (motlu & 63488)/2048; // 63488 = 1111100000000000 en binaire, 
-									//on divise par 2048 = 2puis11 pour se ramener au numéro du registre
-					rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
-					rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
-					sa = (motlu & 1984)/ 64; //1984 = 11111000000 en binaire et 64 = 2puis6 				
-
-									
-				}
-				else if (strcmp(t,"I")==0)
-				{
-					rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
-					rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
-					immediate = (motlu & 65535) ;//65535 = 1111111111111111
-					offset = immediate *4 ;//Le codage de l'offset économise deux zéros, 
-							//car l'adresse d'un mot est forcément multiple de 4
-							//Pour avoir la bonne adresse, il faut donc multiplier par 4.
-
-					
-	
-				}
-				else if (strcmp(t,"T")==0)
-				{
-					target = (motlu & 67108863); //67108863 = 11111111111111111111111111
-								//L'instruction ne contient que 26bits.
-					target = target*4; //On ajoute 2bits car l'adresse est forcément un multiple de 4.
-					target = (target | ((adrtext + position + 4) & 4026531840));
-						//Enfin, on ajoute les 4bits de poids forts du compteur programme
-						//adrtext + position + 4 est l'adresse de l'instruction suivante
-						//4026531840 = 11110000000000000000000000000000 est le masque 
-						//qui permet d'obtenir les poids forts
-
-			
-				}
-			       else WARNING_MSG("Type d'instruction inconnu\n");
-	
 			}
-			
+			else if (strcmp(t,"T")==0)
+			{
+				target = (motlu & 67108863); //67108863 = 11111111111111111111111111
+							//L'instruction ne contient que 26bits.
+				target = target*4; //On ajoute 2bits car l'adresse est forcément un multiple de 4.
+				target = (target | ((val_pc + 4) & 4026531840));
+					//Enfin, on ajoute les 4bits de poids forts du compteur programme
+					//val_pc + 4 est l'adresse de l'instruction suivante
+					//4026531840 = 11110000000000000000000000000000 est le masque 
+					//qui permet d'obtenir les poids forts
+
+		
+			}
+		       else WARNING_MSG("Type d'instruction inconnu\n");
+
 
 			//Remplissage du tableau tab_instructions_decodees
 
-			tab_instructions_disasm[position/4].nom = tab_instructions[iinst].nom;
-			tab_instructions_disasm[position/4].type = t;
-			tab_instructions_disasm[position/4].rd = rd;
-			tab_instructions_disasm[position/4].rs = rs;
-			tab_instructions_disasm[position/4].rt = rt;
-			tab_instructions_disasm[position/4].sa = sa;
-			tab_instructions_disasm[position/4].immediate = immediate;
-			tab_instructions_disasm[position/4].offset = offset;
-			tab_instructions_disasm[position/4].target = target;	
+			p_instruction_disasm->nom = tab_instructions[iinst].nom;
+			p_instruction_disasm->type = t;
+			p_instruction_disasm->rd = rd; 
+			p_instruction_disasm->rs = rs; 
+			p_instruction_disasm->rt = rt;
+			p_instruction_disasm->sa = sa; 
+			p_instruction_disasm->immediate = immediate;
+			p_instruction_disasm->offset = offset; 
+			p_instruction_disasm->target = target;
 
-			
-		}
-		position = position+4; 
+		}	
+		
 	}
 
-
-	return adrtext + (position - 4);//On retourne l'adresse de la dernière instruction désassemblée
+	return 0;
 }
 

@@ -54,7 +54,7 @@ typedef enum {NOT_STARTED, RUN, TERM, PAUSE} run_etat;
  */
 typedef struct {
     inter_mode mode;
-    run_etat etat;
+    run_etat etat; 
     char input[MAX_STR];
     char * from;
     char first_token;
@@ -78,7 +78,7 @@ int assertcmd (interpreteur inter,pm_glob param);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);
 int runcmd(interpreteur inter, pm_glob param);
-void stepcmd (interpreteur inter);
+int stepcmd (interpreteur inter, pm_glob param);
 int breakcmd(interpreteur inter, pm_glob param);
 void helpcmd(interpreteur inter);
 int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf);

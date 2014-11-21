@@ -1,0 +1,2 @@
+set reg pc 42
+assert reg pc 42

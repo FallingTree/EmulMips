@@ -20,6 +20,8 @@
 #include "load.h"
 #include "mem.h"
 #include "dico.h"
+#include "disasm.h"
+#include "emul.h"
 
 
 int main ( int argc, char *argv[] ) {
@@ -45,6 +47,8 @@ int main ( int argc, char *argv[] ) {
 
 //-------------------------------------- Initialisation ---------------------------------------------------------
 
+//Allocation de l'interpréteur
+
     interpreteur inter=init_inter(); /* structure gardant les infos et états de l'interpreteur*/
     FILE *fp = NULL; /* le flux dans lequel les commande seront lues : stdin (mode shell) ou un fichier */
     pm_glob param;  // Paramètres globaux que l'on retrouvera comme argument de plusieurs fonctions
@@ -61,10 +65,17 @@ int main ( int argc, char *argv[] ) {
     FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
 
 
-    Liste_int_t liste_bp=creer_liste_int_t(); //Initilaisation de la liste des break points
+    Liste_int_t liste_bp=creer_liste_int_t(); //Initialisation de la liste des break points
     param.p_liste_bp=&liste_bp;
    // visualiser_liste_int_t(*(param.p_liste_bp)); debug
    
+   int nb_instr;
+   param.p_nb_instr =&nb_instr;
+
+   unsigned int last_disasm = 0;
+   param.p_last_disasm = &last_disasm;
+
+   //Chargement du dictionnaire
    Instruction* tab_instructions;
    param.p_tab_instructions=&tab_instructions;
    int load_ok;
@@ -90,13 +101,35 @@ int main ( int argc, char *argv[] ) {
     }
 
 
+
+
 //Paramètres nécessaires à l'exécution du programme (run)
 
-	int i_disasm ; //Indice dans le tableau des instructions désassemblées de l'instruction courante	
 	int resu_emul ; //Valeur de retour de la fonction emul
-	unsigned int last_disasm ;//Adresse de la dernière instruction désassemblée
+	
 	int i_text=0; //Indice du segment .text dans la mémoire
+	unsigned int adrtext; //Adresse du segment .text dans la mémoire
+	unsigned int size_text; //Taille du segment .text
 
+   	INST instruction; //Instruction suivante du programme
+
+	unsigned int val_pc;
+
+
+// Test Plugins
+
+   /* INST inst_test;
+    inst_test.nom=strdup("ADD");
+    inst_test.type=strdup("I");
+    inst_test.rd=5;
+    inst_test.rs=6;
+    inst_test.rt=7;
+
+    unsigned int * jump;
+
+    param.p_registre[6].content=55;
+    param.p_registre[7].content=44;
+    (*(*(param.p_tab_instructions))[0].fonction)(jump, param, inst_test);*/
 
 
 //----------------------------------------------------------------------------------------------------------------  
@@ -108,66 +141,39 @@ int main ( int argc, char *argv[] ) {
 	switch (inter->etat)
 	{
 		case NOT_STARTED :
-		    	param.p_registre=calloc(NB_REG,sizeof(*(param.p_registre))); //intialisation des registres
-    			init_reg(param.p_registre);  
-    	
-   			stab symtab=new_stab(0); // table des symboles
-    			param.p_symtab= &symtab; 
-
-		
-    			Liste_int_t liste_bp=creer_liste_int_t(); //Initialisation de la liste des break points
-    			param.p_liste_bp=&liste_bp;
-   			// visualiser_liste_int_t(*(param.p_liste_bp)); debug
-
+			if (last_disasm==0) printf("Charger un fichier elf\n");
+			else
+			{
+				if (param.p_registre[34].content != adrtext)
+				{	
+					if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;		
+					printf("Réinitialisation des registres, suppression des breakpoints\n");
+					param.p_registre[34].content = adrtext;
+					liste_bp=supprimer_liste_bp(liste_bp);
+				}
+	
+			}			
 			break;
 	
 		case RUN :
 
-			last_disasm = decode_instructions(param); //Adresse de la dernière instruction désassemblée
-			if (last_disasm==0) WARNING_MSG("Erreur lors du désassemblage des instructions");
-
-
-			//On récupère le numéro du segment .text dans la mémoire
-
-			if (memory->seg[i_text].name==NULL) 
-			{
-				WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-				return 1;
-			}		
-			while (strcmp(memory->seg[i_text].name,".text")!=0)
-			{
-				i_text=i_text+1;
-				if (i_text>NB_SECTIONS) 
-				{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-					return 1;
-				}
-			}
-
-
-			//Récupération de la valeur de l'adresse du segment .text
-
-			unsigned int adrtext;
-			switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-			{
-			   case 32 :
-				adrtext = memory->seg[i_text].start._32;
-				break;
-			    default :
-			       	return 1;
-			}
-
-
-
 			while (inter->etat==RUN)
 			{	
-				i_disasm = param.p_registre[34].content - adrtext;
-				resu_emul = emul((* param.p_tab_instructions_disasm)[i_disasm]); //Exécution de l'instruction
-				registre[34].content =registre[34].content + 4; //incrémentation du registre pc				
+				//Désassemblage de l'instruction suivante
+				if (decode_instruction(&instruction, param)!=0) WARNING_MSG("Erreur lors du désassemblage des instructions");
+								
+				resu_emul = emul(param, instruction); //Exécution de l'instruction
+
+				registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
+
+				val_pc = registre[34].content;
+
+				//printf("ld : %x     pc : %x   \n",last_disasm, val_pc); //debug
 
 				if (etre_dans_liste(param.p_registre[34].content,*(param.p_liste_bp))) inter->etat = PAUSE; 											//Si l'adresse de PC est un point d'arrêt, pause.	
-				if (param.p_registre[34].content > last_disasm) inter->etat = TERM; 
+				if (val_pc > last_disasm) inter->etat = TERM; 
 										//Si on a atteint la fin du segment .text, term.
-					
+	
 			}
 			break;
 			
@@ -191,7 +197,10 @@ int main ( int argc, char *argv[] ) {
             /* Une nouvelle ligne a ete acquise dans le flux fp*/
 
             int res = execute_cmd(inter,param,pf_elf); /* execution de la commande */
-	     
+
+
+												//stab32_print( symtab );
+
             // traitement des erreurs
             switch(res) {
             case 0:

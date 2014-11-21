@@ -1,7 +1,8 @@
-#-------
+------
 #TEST_RETURN_CODE=FAIL           
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
 load boucle.o
-run 0x5000
+step into
+assert reg $t1 12
