@@ -16,6 +16,13 @@
 #include "dico.h"
 #include <dlfcn.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 //Permet de compter la longueur d'une chaine de caractère
 int compter_long_string(char * chaine){
@@ -85,6 +92,8 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 	void *lib;
 	int (*exec_call)(unsigned int*,pm_glob,INST);
 	int (*exec_print)();
+	struct stat buf;
+	struct stat* p_buf=&buf;
 
 	
 	
@@ -136,29 +145,34 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 		(*p_tab_instruction)[i].type=strdup(type);
 		(*p_tab_instruction)[i].nb_operandes=nb_operandes;
 
-		//On compte la longueur de la chaine de caratère pour rajouter le .lib à la fin
-		longueur=compter_long_string(nom);
-
+		//On trouve le chemin d'accès au code de la fonction
 		strcpy(nom_fonction_fichier,"lib/");
-		strcpy(nom_fonction_fichier+4,nom);
-		strcpy(nom_fonction_fichier+longueur+4,".lib");
+		strcat(nom_fonction_fichier,nom);
+		strcat(nom_fonction_fichier,".lib");
 
 
 
-		//printf("Nom fonction fichier : %s et taille chaine caractère : %d\n",nom_fonction_fichier,longueur);	//debug
+		//printf("Nom fonction fichier : %s\n",nom_fonction_fichier);	//debug
 
-			lib = dlopen(nom_fonction_fichier,RTLD_NOW);
-			if (lib)
-			{
+
+			
+			//printf("%s : %d\n",nom_fonction_fichier,stat(nom_fonction_fichier,p_buf));
+			if (!stat(nom_fonction_fichier,p_buf))	//On vérifie si le fichier est bien présent
+			{ 
+				lib = dlopen(nom_fonction_fichier,RTLD_LAZY);	
+				//puts(dlerror());
 				exec_print=dlsym(lib,"print");
-    			//(*exec_print)();		//debug
+    				//(*exec_print)();		//debug
 
 				exec_call=dlsym(lib,"exec");
 				(*p_tab_instruction)[i].fonction=exec_call;
 					
 			}
 
-			else printf("Erreur : Fichier %s non présent\n",nom_fonction_fichier);
+			else {
+			//perror("dlopen : ");
+			printf("Erreur : Fichier %s non présent\n",nom_fonction_fichier); 
+			}
 			
 
 
