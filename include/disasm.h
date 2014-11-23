@@ -16,10 +16,10 @@
 #include "dico.h"
 #include "interpreteur.h"
 
-
 int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, unsigned int *p_size_text);
+int trouver_etiquette (unsigned int adresse, pm_glob param);
 int disasmcmd(interpreteur inter,pm_glob param);
-int decode_instruction(INST* p_instruction_disasm, pm_glob param);
+int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param);
 
 #endif /* _DISASM_H_ */
 

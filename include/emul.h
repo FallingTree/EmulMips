@@ -12,6 +12,6 @@
 
  #include "mem.h"
 
-int emul (pm_glob param, INST inst);
+int emul (unsigned int* p_jump, pm_glob param, INST inst);
 
 #endif /* _EMUL_H_ */

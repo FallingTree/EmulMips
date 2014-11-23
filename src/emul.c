@@ -21,43 +21,54 @@
  #include "is_type.h"
  #include "common/notify.h"
 
-int emul (pm_glob param, INST inst)
+int emul (unsigned int * p_jump, pm_glob param, INST inst)
 {
 	reg *registre = param.p_registre;
 	char * nom = inst.nom;
-	unsigned long int val;
+	long int val_s; //valeur sur 32bits signée
 	int condition;
 	unsigned int target_offset;
+	int32_t a, b ; //Valeur signée sur 32bits
+
 
 	if (strcmp(nom,"ADD")==0)
 		{
-			val = registre[inst.rs].content + inst.immediate;
+			a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+			b = inst.immediate ;			
+			val_s = a + b;
 
-			if ((val>UINT_MAX)||(val<0))
+			if (val_s>UINT_MAX)
 				WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
-			else registre[inst.rd].content = val ;
+			else registre[inst.rd].content = val_s ;
 			return 0;
 		}
 
 	if (strcmp(nom,"ADDI")==0)
 		{
-			val = registre[inst.rs].content + inst.immediate;
+			a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+			b = inst.immediate ;
 
-			if ((val>UINT_MAX)||(val<0))
+			val_s = a + b;
+
+			if (val_s>UINT_MAX)
 				WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
-			else registre[inst.rt].content = registre[inst.rs].content + inst.immediate ;
+			else registre[inst.rt].content = val_s ;
 			return 0;
 		}	
 
 	if (strcmp(nom,"ADDIU")==0)
 		{
-			registre[inst.rt].content = registre[inst.rs].content + inst.immediate ;
+			a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+			b = inst.immediate ;	
+			registre[inst.rt].content = a + b ;
 			return 0;
 		}	
 
 	if (strcmp(nom,"ADDU")==0)
 		{
-			registre[inst.rd].content = registre[inst.rs].content + registre[inst.rt].content ;
+			a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+			b = registre[inst.rt].content ;	
+			registre[inst.rd].content = a + b ;
 			return 0;
 		}
 
@@ -92,7 +103,8 @@ int emul (pm_glob param, INST inst)
 	if (strcmp(nom,"BGTZ")==0)
 		{
 			target_offset = registre[inst.offset].content + registre[34].content;
-			condition = registre[inst.rs].content > 0;
+			a = registre[inst.rs].content; //On force l'interprétation du registre comme entier codé sur 32 bits				
+			condition = (a > 0);
 			if (condition) registre[34].content = registre[34].content + target_offset ;
 			return 0;
 		}
@@ -100,7 +112,8 @@ int emul (pm_glob param, INST inst)
 	if (strcmp(nom,"BLEZ")==0)
 		{
 			target_offset = registre[inst.offset].content + registre[34].content;
-			condition = (registre[inst.rs].content <= 0);
+			a = registre[inst.rs].content; //On force l'interprétation du registre comme entier codé sur 32 bits				
+			condition = (a <= 0);
 			if (condition) registre[34].content = registre[34].content + target_offset ;
 			return 0;
 		}
@@ -108,7 +121,8 @@ int emul (pm_glob param, INST inst)
 	if (strcmp(nom,"BLTZ")==0)
 		{
 			target_offset = registre[inst.offset].content + registre[34].content;
-			condition = (registre[inst.rs].content < 0);
+			a = registre[inst.rs].content; //On force l'interprétation du registre comme entier codé sur 32 bits				
+			condition = (a < 0);
 			if (condition) registre[34].content = registre[34].content + target_offset ;
 			return 0;
 		}
@@ -136,27 +150,27 @@ int emul (pm_glob param, INST inst)
 
 	if (strcmp(nom,"J")==0)
 	{
-		registre[34].content = inst.target ;
+		*p_jump = inst.target ;
 		return 0;
 	}
 
 	if (strcmp(nom,"JAL")==0)
 	{
 		registre[31].content = registre[34].content + 8;
-		registre[34].content = inst.target ;
+		*p_jump = inst.target ;
 		return 0;
 	}
 
 	if (strcmp(nom,"JALR")==0)
 	{
 		registre[inst.rd].content = registre[34].content + 8;
-		registre[34].content = inst.target ;
+		*p_jump = registre[inst.rs].content ;
 		return 0;
 	}
 
 	if (strcmp(nom,"JR")==0)
 	{
-		registre[34].content = registre[inst.rs].content ;
+		*p_jump = registre[inst.rs].content ;
 		return 0;
 	}
 

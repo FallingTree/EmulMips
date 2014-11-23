@@ -12,18 +12,12 @@ CFLAGS=-Wall $(INCLUDE)
 LFLAGS=-lreadline -lm -lcurses
 CFLAGS_DBG=$(CFLAGS) -g -DDEBUG -DVERBOSE
 CFLAGS_RLS=$(CFLAGS)
-CFLAGS_LIB=$(CFLAGS) -shared -fpic 
 
 
 # definition des repertoires de source/destination
 SRCDIR=src
 INCDIR=include
 DOCDIR=doc
-
-#Librairie
-LIBDIR=lib
-LIB=$(wildcard $(LIBDIR)/*.c)
-OBJ_LIB=$(LIB:.c=.lib)
 
 # les fichiers dont on peut se débarasser
 GARBAGE=*~ $(SRCDIR)/*~ $(INCDIR)/*~ $(TESTDIR)/*~ $(SRCDIR)/*.orig $(INCDIR)/*.orig
@@ -44,7 +38,6 @@ all :
 	@echo ""
 	@echo "make debug   => build DEBUG   version"
 	@echo "make release => build RELEASE version"
-	@echo "make lib     => produce the library of the fuctions"
 	@echo "make doc     => produce the doxygen documentation"
 	@echo "make clean   => clean everything"
 	@echo "make tarball => produce archive .tar.gz in ../ directory"
@@ -54,12 +47,6 @@ debug   : $(OBJ_DBG)
 
 release : $(OBJ_RLS)
 	$(LD) $^ $(LFLAGS) -o $(TARGET)
-
-lib     : $(OBJ_LIB)
-	 
-
-%.lib   : %.c
-	$(CC) $(CFLAGS_LIB) $(basename $<).c -o $(basename $<).lib
 
 %.rls.o : %.c
 	$(CC) $< $(CFLAGS_RLS) -c -o $(basename $<).rls.o

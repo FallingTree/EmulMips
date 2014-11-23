@@ -31,7 +31,7 @@ void decouper_word_hexa(char* chaine, byte** tab){
 	char *adresse_c;
 	int i=0;
 	int k=0;
-	char b0[5], b1[5], b2[5], b3[5]; //Contenants des mots
+	char b0[5], b1[3], b2[3], b3[3]; //Contenants des mots
 
 // ------------------------ Vérifications d'usage ----------------------------------------	
 	if (chaine==NULL) return ;
@@ -411,7 +411,9 @@ int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 		
 		param.p_registre[34].content = adrtext;	//Initialisation du registre pc
 		*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
-		stab32_print(*param.p_symtab);	//Affichage de la table des symboles
+		
+		stab32_print(*param.p_symtab); //Affichage de la table des symboles
+
 		return 0;
 		
 	}
@@ -1076,12 +1078,8 @@ int stepcmd (interpreteur inter, pm_glob param)
 	mem memory = *(param.p_memory);
 	char *token = NULL;  
 	int i_text=0;
-	int resu_emul;
 	unsigned int adrtext;	
-	unsigned int val_pc;
 	unsigned int size_text;
-	reg *registre = param.p_registre;
-	INST instruction;
 
 	//On vérifie qu'un fichier a été chargé en mémoire
 	if (memory==NULL)
@@ -1118,17 +1116,7 @@ int stepcmd (interpreteur inter, pm_glob param)
 	}					
 	if (strcmp(token,"into")==0)
 	{
-		inter->etat = PAUSE ; //Si l'etat de l'interpréteur est NOT_STARTED
-		
-		if (decode_instruction(&instruction, param)!=0) WARNING_MSG("Erreur lors du désassemblage des instructions");
-
-		resu_emul = emul(param, instruction); //Exécution de l'instruction
-	
-		registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
-		val_pc = registre[34].content;
-		
-		if (val_pc > *param.p_last_disasm) inter->etat = TERM; //Si on a atteint la fin du segment .text, term.
-										//Cela est possible grâce à step into
+		inter->etat = RUN_1 ;
 
 		return 0;
 	}

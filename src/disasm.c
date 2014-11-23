@@ -19,6 +19,10 @@
  #include "disasm.h"
  #include "load.h"
  #include "is_type.h"
+ #include "elf/syms.h"
+
+//Cette fonction modifie les pointeurs p_i_text, p_adrtext et p_size_text pour obtenir le numéro du segment .text,
+//son adresse et sa taille
 
 int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, unsigned int *p_size_text)
 {
@@ -58,6 +62,32 @@ int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, un
 	*p_adrtext = adrtext;
 	return 0;
 		
+}
+
+//Si une étiquette marque l'adresse passée en paramètre, on l'affiche
+
+int trouver_etiquette (unsigned int adresse, pm_glob param)
+{
+	stab symtab = *param.p_symtab;
+	int i;
+	int i_seg; //Numéro du segment auquel appartient l'étiquette
+	unsigned int adr_seg ; //Adresse du segment auquel appartient l'étiquette
+	
+	for (i=0; i < (symtab.size) ; i++)
+	{
+		i_seg = symtab.sym[i].scnidx;
+		adr_seg = (*(param.p_memory))->seg[i_seg].start._32;
+
+		//printf("\n\n nom : %s   adresse_etiquette %x     numéro_seg %d\n",symtab.sym[i].name, symtab.sym[i].addr._32, i_seg);
+
+		//printf("  %x    \n",symtab.sym[i].addr._32 + adr_seg);
+
+		if ((symtab.sym[i].addr._32 + adr_seg - 0x00001000) == adresse)
+			printf("%s \n", symtab.sym[i].name);
+					
+	}
+
+	return 0;
 }
 
 
@@ -156,13 +186,16 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 		while ((position < size_text)&&(position<vad2-adrtext)) //Tant qu'on n'a pas atteint la fin des données .text, ni la fin de la plage
 		{ 
-			printf("%x :: ", adrtext + position); //Affichage de l'adresse virtuelle de l'instruction lue. 
-			
 			//Affichage éventuel d'une étiquette 
-			//.......
-				
+			trouver_etiquette (adrtext + position, param);
 
-			motlu = trouver_mot_adresse(adrtext+position, param); //On lit l'instruction.
+
+			//Affichage de l'adresse virtuelle de l'instruction lue.
+			printf("  %x :: ", adrtext + position); 
+
+			//Lecture de l'instruction
+
+			motlu = trouver_mot_adresse(adrtext+position, param); 
 			printf("%08x    ",motlu);
 
 			int iinst = 0 ; //Indice du mnémonique lu dans le dictionnaire
@@ -311,33 +344,26 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 
 
-//Cette fonction inspirée de disasm désassemble l'instruction suivante du programme, c'est-à-dire celle qui se trouve à l'adresse pc
+//Cette fonction inspirée de disasm désassemble l'instruction passée en paramètre
 //Pour connaître les opérandes utilisés, il faut se référer au nom de l'instruction, ce qui est possible au moment de l'exécution, mais demanderait un grand nombre de cas au moment de l'affichage.
 
-int decode_instruction(INST* p_instruction_disasm, pm_glob param) 
+int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param) 
 {
-	mem memory = *(param.p_memory);
 	int i_text=0;
 	unsigned int adrtext;	
 	unsigned int val_pc = param.p_registre[34].content;
-	unsigned int size_text;
+	unsigned int size_text;	
 
-	//On vérifie qu'un fichier a été chargé en mémoire
-	if (memory==NULL)
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) 
 	{
-  		WARNING_MSG("Il faut d'abord charger un fichier objet/n");
+		WARNING_MSG("Erreur lors du désassemblage des instructions");
 		return 1;
 	}	
 
-	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
-	
 	Instruction * tab_instructions = *(param.p_tab_instructions); //Tableau des mnémoniques
 	int nb_instructions = *param.p_nb_instr; //Nombre d'instructions du dictionnaire.
 
-	word motlu ;//L'instruction lue
-
-	motlu = trouver_mot_adresse(val_pc, param); //On lit l'instruction à l'adresse contenue dans le registre pc.
-		
+	
 	int iinst = 0 ; //Indice du mnémonique lu dans le dictionnaire
 
 	unsigned int masque = tab_instructions[iinst].masque; //Premier masque du dictionnaire

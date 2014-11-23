@@ -55,15 +55,15 @@ typedef struct {
 //Structure d'une instruction désassemblée de type quelconque
 typedef struct 
 {
-	char *nom;
-	char *type;
-	unsigned int rd;
-	unsigned int rs;
-	unsigned int rt;
-	unsigned int sa;
-	unsigned int immediate;
-	unsigned int offset;
-	unsigned int target;
+    char *nom;
+    char *type;
+    unsigned int rd;
+    unsigned int rs;
+    unsigned int rt;
+    unsigned int sa;
+    unsigned int immediate;
+    unsigned int offset;
+    unsigned int target;
 } INST;
 
 typedef struct pm_gl pm_glob;
