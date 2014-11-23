@@ -13,17 +13,20 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 	char * nom = inst.nom;
-	unsigned long int val;
+	long int val_s; //valeur sur 32bits signée
 	int condition;
 	unsigned int target_offset;
+	int32_t a, b ; //Valeur signée sur 32bits
 
 	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
-	b = registre[inst.rt].content ;	
-	registre[inst.rd].content = a + b ;
+	b = inst.immediate ;			
+	val_s = a + b;
+
+	registre[inst.rt].content = registre[inst.rs].content & inst.immediate ;
 	return 0;
 }
 
 int print(){
-	printf("Fonction ADDU\n");
+	printf("Fonction AND\n");
 	return 0;
 }

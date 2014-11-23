@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include "emul.h"
 #include "mem.h"
 #include "is_type.h"
 #include "common/notify.h"
@@ -12,16 +13,21 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 	char * nom = inst.nom;
-	unsigned long int val;
+	long int val_s; //valeur sur 32bits signée
 	int condition;
 	unsigned int target_offset;
+	int32_t a, b ; //Valeur signée sur 32bits
 
-	val = registre[inst.rs].content + inst.immediate;
+	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+	b = inst.immediate ;
 
-			if ((val>UINT_MAX)||(val<0))
-				WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
-			else registre[inst.rt].content = registre[inst.rs].content + inst.immediate ;
-			return 0;
+	val_s = a + b;
+
+	if (val_s>UINT_MAX)
+		WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
+	else registre[inst.rt].content = val_s ;
+	return 0;
+
 }
 
 int print(){

@@ -9,21 +9,20 @@
 #include "is_type.h"
 #include "common/notify.h"
 
-int exec(unsigned int* jump, pm_glob param, INST inst){
+int exec(unsigned int* p_jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 	char * nom = inst.nom;
-	unsigned long int val;
+	long int val_s; //valeur sur 32bits signée
 	int condition;
 	unsigned int target_offset;
+	int32_t a, b ; //Valeur signée sur 32bits
 
-	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
-	b = registre[inst.rt].content ;	
-	registre[inst.rd].content = a + b ;
-	return 0;
+*p_jump = inst.target ;
+return 0;
 }
 
 int print(){
-	printf("Fonction ADDU\n");
+	printf("Fonction J\n");
 	return 0;
 }

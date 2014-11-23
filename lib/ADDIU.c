@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include "emul.h"
 #include "mem.h"
 #include "is_type.h"
 #include "common/notify.h"
@@ -16,7 +17,9 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	int condition;
 	unsigned int target_offset;
 
-	registre[inst.rt].content = registre[inst.rs].content + inst.immediate ;
+	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+	b = inst.immediate ;	
+	registre[inst.rt].content = a + b ;
 	return 0;
 }
 

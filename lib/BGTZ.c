@@ -18,17 +18,14 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	unsigned int target_offset;
 	int32_t a, b ; //Valeur signée sur 32bits
 
-	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
-	b = inst.immediate ;			
-	val_s = a + b;
-
-	if (val_s>UINT_MAX)
-		WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
-	else registre[inst.rd].content = val_s ;
+	target_offset = registre[inst.offset].content + registre[34].content;
+	a = registre[inst.rs].content; //On force l'interprétation du registre comme entier codé sur 32 bits				
+	condition = (a > 0);
+	if (condition) registre[34].content = registre[34].content + target_offset ;
 	return 0;
 }
 
 int print(){
-	printf("Fonction ADD\n");
+	printf("Fonction BGTZ\n");
 	return 0;
 }
