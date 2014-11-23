@@ -49,10 +49,10 @@ all :
 	@echo "make clean   => clean everything"
 	@echo "make tarball => produce archive .tar.gz in ../ directory"
 
-debug   : $(OBJ_DBG)
+debug   : $(OBJ_DBG) $(OBJ_LIB)
 	$(LD) $^ $(LFLAGS) -o $(TARGET)
 
-release : $(OBJ_RLS)
+release : $(OBJ_RLS) $(OBJ_LIB)
 	$(LD) $^ $(LFLAGS) -o $(TARGET)
 
 lib     : $(OBJ_LIB)
@@ -71,7 +71,7 @@ doc :
 	$(DOXYGEN)
 
 clean : 
-	$(RM) $(TARGET) $(SRCDIR)/*.o $(GARBAGE) 
+	$(RM) $(TARGET) $(SRCDIR)/*.o $(LIBDIR)/*.lib $(GARBAGE) 
 	$(RM) -r $(DOCDIR)/*	
 
 # créé l'archive à envoyer à votre tuteur (pas de rar SVP! et interdiction absolu d'envoyer autre chose qu'une archive, il ne doit y avoir qu'un seul fichier joint dans l'e-mail !)
