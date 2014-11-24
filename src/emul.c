@@ -23,16 +23,13 @@
 
 int emul (unsigned int * p_jump, pm_glob param, INST inst)
 {
-	reg *registre = param.p_registre;
 	char * nom = inst.nom;
-	long int val_s; //valeur sur 32bits signée
-	int condition;
-	unsigned int target_offset;
-	int32_t a, b ; //Valeur signée sur 32bits
 	int i,load_fonction=0;
 
-	if (strcmp(nom,"NOP")==1)
+	
+	if (!strcmp(nom,"NOP"))
 	{
+				
 		return 1;
 	}
 
