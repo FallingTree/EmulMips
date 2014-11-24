@@ -31,6 +31,11 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 	int32_t a, b ; //Valeur signée sur 32bits
 	int i,load_fonction=0;
 
+	if (strcmp(nom,"NOP")==1)
+	{
+		return 1;
+	}
+
 
 	for (i = 0; i < *(param.p_nb_instr); ++i)
 	{
@@ -38,7 +43,14 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 		if (nom==(*(param.p_tab_instructions))[i].nom)
 		{
 			// printf("Youpi !\n");//debug
+			if (((*(param.p_tab_instructions))[i].fonction)==NULL)
+			{
+				printf("Erreur : instruction %s non exéctuée\n",nom);
+				return 0;
+			}
+
 			load_fonction = ((*(param.p_tab_instructions))[i].fonction)(p_jump,param,inst);
+
 			if (load_fonction)
 			{
 				printf("Erreur : instruction %s non exéctuée\n",nom);

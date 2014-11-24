@@ -129,7 +129,7 @@ void init_reg(reg *registre)
     registre[32].name=strdup("hi");
 
     registre[33].content=0;
-    registre[33].name=strdup("l0");
+    registre[33].name=strdup("lo");
 
     registre[34].content=0;
     registre[34].name=strdup("pc");
