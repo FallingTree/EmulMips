@@ -88,6 +88,7 @@ struct pm_gl {
     Instruction **p_tab_instructions;
     int *p_nb_instr;
     unsigned int *p_last_disasm;
+    unsigned int *p_adresse_start;
 };
 
 

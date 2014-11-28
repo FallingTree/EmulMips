@@ -129,7 +129,7 @@ void print_segment_raw_content(segment* seg) {
 
 // la foncrion load charge un fichier elf en entrée
 //
-int load (mem* memory, stab* symtab, FILE* pf_elf,char* nom_fichier)
+int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
 {
 
 
@@ -140,12 +140,19 @@ int load (mem* memory, stab* symtab, FILE* pf_elf,char* nom_fichier)
     unsigned int type_machine;
     unsigned int endianness;   //little ou big endian
     unsigned int bus_width;    // 32 bits ou 64bits
-    unsigned int next_segment_start = START_MEM; // compteur pour designer le début de la prochaine section
+    mem* memory = param.p_memory;
+    stab* symtab = param.p_symtab;
+
+
+    unsigned int next_segment_start = *(param.p_adresse_start); // compteur pour designer le début de la prochaine section
+
 
     if ((pf_elf = fopen(nom_fichier,"r")) == NULL) {
     ERROR_MSG("cannot open file %s", nom_fichier);
     return 1;
     }
+
+
 
        if (!assert_elf_file(pf_elf))
         ERROR_MSG("file %s is not an ELF file", nom_fichier);

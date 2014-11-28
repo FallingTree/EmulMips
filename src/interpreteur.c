@@ -31,7 +31,7 @@ void decouper_word_hexa(char* chaine, byte** tab){
 	char *adresse_c;
 	int i=0;
 	int k=0;
-	char b0[5], b1[3], b2[3], b3[3]; //Contenants des mots
+	char b0[5], b1[5], b2[5], b3[5]; //Contenants des mots
 
 // ------------------------ Vérifications d'usage ----------------------------------------	
 	if (chaine==NULL) return ;
@@ -391,30 +391,62 @@ int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 	int rload;
 	int i_text;
 	unsigned int size_text ;
+	unsigned int ad_load;
 
 
 	//On récupère le nom du fichier à ouvrir
 	char *nom_fichier = get_next_token (inter);
 
 	//Ainsi que l'adresse du premier segment
-	char* adresse=get_next_token (inter);
-	if (adresse!= NULL && !is_hexa(adresse)){
-		WARNING_MSG("Attention : %s n'est pas une adresse\n",adresse);
-		return 1;
-	}
+	
 	if (is_objet(nom_fichier)) 
 	{		
-		rload = load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
+
+		char* adresse=get_next_token (inter);
+		if (adresse!= NULL && !is_hexa(adresse)){
+			WARNING_MSG("Attention : %s n'est pas une adresse\n",adresse);
+			return 1;
+		}
+
+		if (!adresse)
+		{
+			
+			ad_load = 0x3000;
+			param.p_adresse_start = &ad_load;
+			rload = load (param,pf_elf,nom_fichier);
+			if (rload != 0) return 1;
+		
+			if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+		
+			param.p_registre[34].content = adrtext;	//Initialisation du registre pc
+			*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
+		
+			//stab32_print(*param.p_symtab); //Affichage de la table des symboles
+
+			return 0;
+		}
+
+		ad_load=convertir_string_add(adresse);
+		if (ad_load%0x1000 != 0)
+		{
+			WARNING_MSG("Attention : %s n'est pas une adresse multiple de 0x1000\n",adresse);
+			return 1;
+		}
+
+		param.p_adresse_start = &ad_load;
+
+		rload = load (param,pf_elf,nom_fichier);
 		if (rload != 0) return 1;
-		
+	
 		if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
-		
+	
 		param.p_registre[34].content = adrtext;	//Initialisation du registre pc
 		*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
-		
-		stab32_print(*param.p_symtab); //Affichage de la table des symboles
+	
+		//stab32_print(*param.p_symtab); //Affichage de la table des symboles
 
 		return 0;
+		
 		
 	}
 	else 
