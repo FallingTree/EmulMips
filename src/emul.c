@@ -28,8 +28,7 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 
 	
 	if (!strcmp(nom,"NOP"))
-	{
-				
+	{	
 		return 1;
 	}
 
@@ -45,7 +44,7 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 				printf("Erreur : instruction %s non exéctuée\n",nom);
 				return 0;
 			}
-
+		
 			load_fonction = ((*(param.p_tab_instructions))[i].fonction)(p_jump,param,inst);
 
 			if (load_fonction)

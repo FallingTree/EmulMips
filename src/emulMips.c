@@ -105,6 +105,8 @@ int main ( int argc, char *argv[] ) {
 
 //Paramètres nécessaires à l'exécution du programme (run)
 
+	int resu_emul; //Valeur de retour de la fonction emul
+
 	int i_text=0; //Indice du segment .text dans la mémoire
 	unsigned int adrtext; //Adresse du segment .text dans la mémoire
 	unsigned int size_text; //Taille du segment .text
@@ -118,8 +120,6 @@ int main ( int argc, char *argv[] ) {
 	int i_if ;
 	int i_id ;
 	int i_ex ;
-	int i_mem ;
-	int i_wb ;
 
 //----------------------------------------------------------------------------------------------------------------  
 
@@ -129,13 +129,12 @@ int main ( int argc, char *argv[] ) {
 	//Exécution du programme en cours
 	switch (inter->etat)
 	{
+		
 		case NOT_STARTED :
 
 			i_if = 0;
 			i_id = 0;
 			i_ex = 0;
-			i_mem = 0;
-			i_wb = 0;
 
 			if (last_disasm==0) printf("Charger un fichier elf\n");
 			else
@@ -151,17 +150,13 @@ int main ( int argc, char *argv[] ) {
 			}			
 			break;
 	
-		case RUN :
+		case RUN : //Etat d'éxécution de la fonction run
 
 			while (inter->etat==RUN)
 			{	
 				jump = 0;
 
 				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
-
-				if (etre_dans_liste(param.p_registre[34].content,*(param.p_liste_bp))) inter->etat = PAUSE; 											//Si l'adresse de PC est un point d'arrêt, pause.	
-				if (registre[34].content > last_disasm) inter->etat = TERM; 
-										//Si on a atteint la fin du segment .text, term.
 				
 				//---------PIPELINE SIMPLIFIE---------//
 
@@ -169,10 +164,85 @@ int main ( int argc, char *argv[] ) {
 				//Exécution de l'instruction
 				if (i_id)
 				{	
-					emul(&jump, param, instruction);
-					if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
-					i_ex = 1;
-					printf("Instruction exécutée : %s \n", instruction.nom);
+					resu_emul = emul(&jump, param, instruction);
+					if (!resu_emul) inter->etat = PAUSE;
+					else
+					{
+						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
+						i_ex = 1;
+						printf("Instruction exécutée : %s \n", instruction.nom);
+					}				
+				}
+
+				//Désassemblage de l'instruction
+				if (i_if) 
+				{
+					decode_instruction(motlu, &instruction, param);
+					i_id = 1;
+					printf("Instruction désassemblée : %s\n", instruction.nom);
+
+					if (jump)
+					{
+						emul(&jump, param, instruction);
+						registre[34].content = jump; //Saut à l'adresse calculée par l'instruction de saut	
+					}
+				}
+
+				//Extraction de l'instruction
+					
+					//On lit l'instruction à l'adresse contenue dans le registre pc.
+
+					if (! i_if) motlu = trouver_mot_adresse(registre[34].content, param);
+						//Lecture de la première instruction
+
+					else if (registre[34].content > last_disasm + 4)
+						motlu = 0; //Cas où il n'y a plus d'instruction à lire
+
+					else motlu = trouver_mot_adresse(registre[34].content + 4, param);
+ 						//La valeur de pc est celle de l'instruction désassemblée, on lit l'instruction suivante.
+
+					i_if = 1;
+
+					printf("Instruction extraite : %x\n\n", motlu);
+
+				if (etre_dans_liste(param.p_registre[34].content,*(param.p_liste_bp))) 
+				{
+					WARNING_MSG("Breakpoint à l'adresse %08x",param.p_registre[34].content);
+					inter->etat = PAUSE; 		//Si l'adresse de PC est un point d'arrêt, pause.	
+				}
+	
+				if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
+				{
+					printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+					inter->etat = NOT_STARTED;
+				}								
+
+	
+			}
+			break;
+				
+		case RUN_PROCEDURE : //Etat d'éxécution de la fonction step
+
+			jump = 0;
+			while ((inter->etat==RUN_PROCEDURE)&&(!jump))
+			{	
+				
+				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
+
+				//---------PIPELINE SIMPLIFIE---------//
+
+
+				//Exécution de l'instruction
+				if (i_id)
+				{	
+					resu_emul = emul(&jump, param, instruction);
+					if (!resu_emul) inter->etat = PAUSE;
+					else
+					{
+						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
+						i_ex = 1;
+						printf("Instruction exécutée : %s \n", instruction.nom);
+					}
 				}
 
 				//Désassemblage de l'instruction
@@ -202,34 +272,43 @@ int main ( int argc, char *argv[] ) {
 
 					printf("Instruction extraite : %x\n\n", motlu);	
 
-	
-			}
-			break;
+				if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
+				{
+					printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+					inter->etat = NOT_STARTED;
+				}
 		
-		case RUN_1 :
+			}
+
+			inter->etat = PAUSE;
+			break;
+
+		case RUN_1 : //Etat d'éxécution de la fonction step into
 
 			i_ex = 0;
+			jump = 0;
 			while (! i_ex)
 			{
 				printf("Exécution d'une instruction\n");
-				jump = 0;
+								jump = 0;
 
 				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
 
-				if (etre_dans_liste(param.p_registre[34].content,*(param.p_liste_bp))) inter->etat = PAUSE; 											//Si l'adresse de PC est un point d'arrêt, pause.	
-				if (registre[34].content > last_disasm) inter->etat = TERM; 
-										//Si on a atteint la fin du segment .text, term.
-
+				
 				//---------PIPELINE SIMPLIFIE---------//
 
 
 				//Exécution de l'instruction
 				if (i_id)
-				{	
-					emul(&jump, param, instruction);
-					if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
-					i_ex = 1;
-					printf("Instruction exécutée : %s \n", instruction.nom);
+				{		
+					resu_emul = emul(&jump, param, instruction);
+					if (!resu_emul) inter->etat = PAUSE;
+					else
+					{
+						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
+						i_ex = 1;
+						printf("Instruction exécutée : %s \n", instruction.nom);
+					}
 				}
 
 				//Désassemblage de l'instruction
@@ -247,25 +326,31 @@ int main ( int argc, char *argv[] ) {
 				}
 
 				//Extraction de l'instruction
-				
+					
 					//On lit l'instruction à l'adresse contenue dans le registre pc.
-					motlu = trouver_mot_adresse(registre[34].content, param); 
+
+					if (! i_if) motlu = trouver_mot_adresse(registre[34].content, param);
+						//Lecture de la première instruction
+					else motlu = trouver_mot_adresse(registre[34].content + 4, param);
+ 						//La valeur de pc est celle de l'instruction désassemblée, on lit l'instruction suivante.
+
 					i_if = 1;
 
-				printf("Instruction extraite : %x\n\n", motlu);					
+					printf("Instruction extraite : %x\n\n", motlu);					
 
 			}
 	
-			inter->etat = PAUSE;
+			if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
+			{
+				printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+				inter->etat = NOT_STARTED;
+			}
+
+			else inter->etat = PAUSE;
 			break;
 			
 		case PAUSE :
 			printf("Programme en pause\n");
-			break;
-	
-		case TERM :
-			printf("Exécution du programme terminée\n");
-			inter->etat = NOT_STARTED;
 			break;
 	}
 	

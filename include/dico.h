@@ -16,9 +16,9 @@
 
 
 //Permet de se retrouver dans le tableau des variables des opérateurs
-enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET};
+enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET, BASE};
 
-int compter_long_string(char * chaine);
+
 int visualiser_tab_instructions(Instruction* tab, int n);
 int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param);
 

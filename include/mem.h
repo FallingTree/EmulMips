@@ -62,7 +62,7 @@ typedef struct
     unsigned int rt;
     unsigned int sa;
     unsigned int immediate;
-    unsigned int offset;
+    short int offset;
     unsigned int target;
 } INST;
 

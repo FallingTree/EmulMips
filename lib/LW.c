@@ -27,21 +27,21 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 
-
 	byte base = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
-	short int off = (short) inst.offset;			
+	short int off = (short int) inst.offset;			
 	unsigned int adresse = base + off;
 	byte octect[4];
-	int seg = trouver_seg_adresse(adresse,param);
+	int seg = trouver_seg_adresse(adresse, param);
 
+	printf("%d\n", inst.rs);
 	byte * p_content_mem = (*(param.p_memory))->seg[seg].content + (adresse - (*(param.p_memory))->seg[seg].start._32);
-	
+
 	octect[0] = *p_content_mem;
 	octect[1] = * (p_content_mem + 1);
 	octect[2] = * (p_content_mem + 2);
 	octect[3] = * (p_content_mem + 3);
 
-	word mot= (octect[0] >> 24) & (0xff000000) + (octect[1] >> 16) & (0x00ff0000) + (octect[2] >> 8) & (0x0000ff00) + octect[0];
+	word mot= (octect[0] >> 24) + (octect[1] >> 16) + (octect[2] >> 8) + octect[0];
 
 
 	registre[inst.rt].content = (int) mot;

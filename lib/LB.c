@@ -28,7 +28,7 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	reg *registre = param.p_registre;
 
 
-	byte base = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+	unsigned int base = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
 	short int rt_val = (short) inst.offset;			
 	unsigned int adresse = base + rt_val;
 

@@ -1,4 +1,4 @@
-load boucle.o
+load relocation.o
 disasm 0x3000+400
 run
 

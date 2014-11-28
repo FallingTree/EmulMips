@@ -1,3 +1,2 @@
-load pile.o
-disasm 0x3000+400
-disp mem map
+load simple_multdivswlw.o
+run

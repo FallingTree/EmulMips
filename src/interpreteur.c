@@ -630,6 +630,11 @@ int setcmd(interpreteur inter,pm_glob param)
 	
 	if (strcmp(token,"mem")==0)
 	{
+		if (*(param.p_memory)==NULL)
+		{
+			WARNING_MSG("Aucun fichier chargé");
+			return -2;
+		}
 		token = get_next_token (inter);
 		if (token==NULL) return 1;	
 		if (strcmp(token,"byte")==0)

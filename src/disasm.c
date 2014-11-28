@@ -66,7 +66,7 @@ int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, un
 
 //Si une étiquette marque l'adresse passée en paramètre, on l'affiche
 
-int trouver_etiquette (unsigned int adresse, pm_glob param)
+int trouver_etiquette (unsigned int adresse, pm_glob param, int* p_i_etiquette)
 {
 	stab symtab = *param.p_symtab;
 	int i;
@@ -83,8 +83,10 @@ int trouver_etiquette (unsigned int adresse, pm_glob param)
 		//printf("  %x    \n",symtab.sym[i].addr._32 + adr_seg);
 
 		if ((symtab.sym[i].addr._32 + adr_seg - 0x00001000) == adresse)
-			printf("%s \n", symtab.sym[i].name);
-					
+		{
+			*p_i_etiquette = i;
+			return 1;
+		}			
 	}
 
 	return 0;
@@ -181,13 +183,14 @@ int disasmcmd(interpreteur inter,pm_glob param)
 		Instruction * tab_instructions = *(param.p_tab_instructions); //Tableau des mnémoniques
 		int nb_instructions = 41; //Nombre d'instructions du dictionnaire.
 
+		int i_etiquette ;
 		word motlu ;//L'instruction lue
 
 
 		while ((position < size_text)&&(position<vad2-adrtext)) //Tant qu'on n'a pas atteint la fin des données .text, ni la fin de la plage
 		{ 
 			//Affichage éventuel d'une étiquette 
-			trouver_etiquette (adrtext + position, param);
+			if (trouver_etiquette (adrtext + position, param, &i_etiquette)) printf("%s \n", (*param.p_symtab).sym[i_etiquette].name);
 
 
 			//Affichage de l'adresse virtuelle de l'instruction lue.
@@ -232,7 +235,8 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 				
 				char* t = tab_instructions[iinst].type;
-				unsigned int rd, rs, rt, sa, immediate, target, offset;
+				unsigned int rd, rs, rt, sa, immediate, target, base = 0;
+				short int offset = 0;
 				reg *registre = param.p_registre;
 
 			
@@ -285,9 +289,8 @@ int disasmcmd(interpreteur inter,pm_glob param)
 						rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
 						rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
 						immediate = (motlu & 65535) ;//65535 = 1111111111111111
-						offset = immediate *4 ;//Le codage de l'offset économise deux zéros, 
-								//car l'adresse d'un mot est forcément multiple de 4
-								//Pour avoir la bonne adresse, il faut donc multiplier par 4.
+						offset = (motlu & 65535) ;//65535 = 1111111111111111
+						base = rs;
 
 						if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
 								&&tab_instructions[iinst].var_op[4] ) 
@@ -295,7 +298,16 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
 								&&tab_instructions[iinst].var_op[6] ) 
-							printf("%s %s %u\n", registre[rs].name, registre[rt].name, offset);
+							printf("%s %s %d\n", registre[rs].name, registre[rt].name, offset);
+
+						else if (tab_instructions[iinst].var_op[1]&&tab_instructions[iinst].var_op[6]
+										&&tab_instructions[iinst].var_op[7]) 
+							printf("%s 0x%x(%s)\n", registre[rt].name, offset, registre[base].name);
+
+						else if (tab_instructions[iinst].var_op[1]&&tab_instructions[iinst].var_op[6] ) 
+							{
+								printf("%s 0x%x\n", registre[rt].name, offset);
+							}
 
 						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[4]) 
 							printf("%s %u\n", registre[rs].name, immediate);
@@ -311,15 +323,11 @@ int disasmcmd(interpreteur inter,pm_glob param)
 					{
 						target = (motlu & 67108863); //67108863 = 11111111111111111111111111
 									//L'instruction ne contient que 26bits.
-						target = target*4; //On ajoute 2bits car l'adresse est forcément un multiple de 4.
-						target = (target | ((adrtext + position + 4) & 4026531840));
-							//Enfin, on ajoute les 4bits de poids forts du compteur programme
-							//adrtext + position + 4 est l'adresse de l'instruction suivante
-							//4026531840 = 11110000000000000000000000000000 est le masque 
-							//qui permet d'obtenir les poids forts
 
-				
-						printf("%u\n",  target);
+						//Affichage éventuel d'une étiquette
+						if (trouver_etiquette (target, param, &i_etiquette))
+							 printf("%s \n", (*param.p_symtab).sym[i_etiquette].name);
+						else printf("0x%x\n",  target);
 					}
 				        else WARNING_MSG("Type d'instruction inconnu\n");
 
@@ -351,7 +359,6 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 {
 	int i_text=0;
 	unsigned int adrtext;	
-	unsigned int val_pc = param.p_registre[34].content;
 	unsigned int size_text;	
 
 	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) 
@@ -403,7 +410,8 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 
 			
 		char* t = tab_instructions[iinst].type;
-		unsigned int rd, rs, rt, sa, immediate, target, offset = 0;
+		unsigned int rd, rs, rt, sa, immediate, target = 0;
+		short int offset = 0;
 
 		
 		if (iinst == nb_instructions) printf("Instruction inconnue\n");
@@ -424,9 +432,7 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 				rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
 				rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
 				immediate = (motlu & 65535) ;//65535 = 1111111111111111
-				offset = immediate *4 ;//Le codage de l'offset économise deux zéros, 
-						//car l'adresse d'un mot est forcément multiple de 4
-						//Pour avoir la bonne adresse, il faut donc multiplier par 4.
+				offset = immediate ; //Les bits supplémentaires sont ajoutés lors de l'exécution des fonctions. 
 
 				
 
@@ -434,15 +440,9 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 			else if (strcmp(t,"T")==0)
 			{
 				target = (motlu & 67108863); //67108863 = 11111111111111111111111111
-							//L'instruction ne contient que 26bits.
-				target = target*4; //On ajoute 2bits car l'adresse est forcément un multiple de 4.
-				target = (target | ((val_pc + 4) & 4026531840));
-					//Enfin, on ajoute les 4bits de poids forts du compteur programme
-					//val_pc + 4 est l'adresse de l'instruction suivante
-					//4026531840 = 11110000000000000000000000000000 est le masque 
-					//qui permet d'obtenir les poids forts
-
-		
+							//target n'est codée que sur 26bits. 
+							//Les bits supplémentaires sont ajoutés lors de l'exécution des fonctions. 
+				
 			}
 		       else WARNING_MSG("Type d'instruction inconnu\n");
 

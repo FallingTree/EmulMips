@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-run 0x3008
+run 0x3010

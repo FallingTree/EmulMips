@@ -6,4 +6,4 @@
 load boucle.o
 break add 0x3000
 step
-assert reg pc 0x3004
+assert reg pc 0x3000

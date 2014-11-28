@@ -87,7 +87,6 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 	int nb_operandes;
 
 	//Initialisation librairie
-	int longueur;
 	char nom_fonction_fichier[512];
 	void *lib;
 	int (*exec_call)(unsigned int*,pm_glob,INST);
@@ -128,12 +127,12 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 	while (i<nb_instructions){
 
 		//On alloue la mémoire dans la table des instructions pour le tableau var_op
-		(*p_tab_instruction)[i].var_op=calloc(6,sizeof(*((*p_tab_instruction)[i].var_op)));
+		(*p_tab_instruction)[i].var_op=calloc(7,sizeof(*((*p_tab_instruction)[i].var_op)));
 
 		fgets(chaine_lue, 100, dico);
 		//printf("Chaine lue : %s",chaine_lue); //debug
 
-		sscanf(chaine_lue,"%s %x %x %s %d %d %d %d %d %d %d %d",nom,&masque,&mnemonique,type,(*p_tab_instruction)[i].var_op+RS,(*p_tab_instruction)[i].var_op+RT,(*p_tab_instruction)[i].var_op+RD,(*p_tab_instruction)[i].var_op+SA,(*p_tab_instruction)[i].var_op+IMMEDIATE,(*p_tab_instruction)[i].var_op+TARGET,(*p_tab_instruction)[i].var_op+OFFSET,&nb_operandes);
+		sscanf(chaine_lue,"%s %x %x %s %d %d %d %d %d %d %d %d %d",nom,&masque,&mnemonique,type,(*p_tab_instruction)[i].var_op+RS,(*p_tab_instruction)[i].var_op+RT,(*p_tab_instruction)[i].var_op+RD,(*p_tab_instruction)[i].var_op+SA,(*p_tab_instruction)[i].var_op+IMMEDIATE,(*p_tab_instruction)[i].var_op+TARGET,(*p_tab_instruction)[i].var_op+OFFSET,(*p_tab_instruction)[i].var_op+BASE, &nb_operandes);
 
 
 		//printf("%s %x %x %s %d %d %d %d %d %d\n",nom,masque,mnemonique,type,(*p_tab_instruction)[i].var_op[RS],(*p_tab_instruction)[i].var_op[RT],(*p_tab_instruction)[i].var_op[RD],(*p_tab_instruction)[i].var_op[SA],(*p_tab_instruction)[i].var_op[IMMEDIATE],(*p_tab_instruction)[i].var_op[ADDRESS]);
@@ -174,12 +173,6 @@ int load_dico(Instruction** p_tab_instruction, char* nom_fichier, pm_glob param)
 			printf("Erreur : Fichier %s non présent\n",nom_fonction_fichier); 
 			}
 			
-
-
-
-
-		
-
 		i++;
 	}
 	
