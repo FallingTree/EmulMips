@@ -9,6 +9,64 @@
 #include "common/notify.h"
  #include "load.h"
  #include "mem.h"
+ #include "elf/relocator.h"
+
+
+
+/*--------------------------------------------------------------------------  */
+/**
+ * @param fp le fichier elf original
+ * @param seg le segment à reloger
+ * @param mem l'ensemble des segments
+ *
+ * @brief Cette fonction effectue la relocation du segment passé en parametres
+ * @brief l'ensemble des segments doit déjà avoir été chargé en memoire.
+ *
+ * VOUS DEVEZ COMPLETER CETTE FONCTION POUR METTRE EN OEUVRE LA RELOCATION !!
+ */
+void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,stab symtab) {
+    byte *ehdr    = __elf_get_ehdr( fp );
+    uint32_t  scnsz  = 0;
+    Elf32_Rel *rel = NULL;
+    char* reloc_name = malloc(strlen(seg.name)+strlen(RELOC_PREFIX_STR)+1);
+    scntab section_tab;
+
+    // on recompose le nom de la section
+    memcpy(reloc_name,RELOC_PREFIX_STR,strlen(RELOC_PREFIX_STR)+1);
+    strcat(reloc_name,seg.name);
+
+    // on récupere le tableau de relocation et la table des sections
+    rel = (Elf32_Rel *)elf_extract_scn_by_name( ehdr, fp, reloc_name, &scnsz, NULL );
+    elf_load_scntab(fp ,32, &section_tab);
+
+    if (rel == NULL) DEBUG_MSG("BOUYA\n %s",seg.name);
+    // Tests
+    DEBUG_MSG("-------------- Pendant Relocation -------------------\n"); 
+   
+    
+
+
+
+    if (rel != NULL &&seg.content!=NULL && seg.size._32!=0) {
+
+        INFO_MSG("--------------Relocation de %s-------------------\n",seg.name) ;
+        INFO_MSG("Nombre de symboles a reloger: %ld\n",scnsz/sizeof(*rel)) ;
+
+	 printf("Relocation segment %s : \n Offset : %d \n Info : %x \n\n",seg.name,(rel+1)->r_offset,(rel+1)->r_info);
+	 printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+1)->r_info),ELF32_R_SYM((rel+1)->r_info));
+        //------------------------------------------------------
+
+        //TODO : faire la relocation ICI !
+
+        //------------------------------------------------------
+
+    }
+    del_scntab(section_tab);
+    free( rel );
+    free( reloc_name );
+    free( ehdr );
+
+}
 
 
 
@@ -211,6 +269,13 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
                         return 1;
     }
 
+    //stab32_print( *symtab );
+
+
+    //------------------------------------ Relocation -------------------------------------------- //
+    DEBUG_MSG("-------------- Avant Relocation -------------------\n");
+    reloc_segment(pf_elf, (*memory)->seg[0], *memory,endianness,*symtab);
+    DEBUG_MSG("-------------- Après Relocation -------------------\n");
 
     fclose(pf_elf);
     return 0;
