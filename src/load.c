@@ -1,5 +1,5 @@
 /*
- Fonctions nécessaires au chargement d'un fichier elf
+ Fonctions nÃ©cessaires au chargement d'un fichier elf
  */
 
 
@@ -7,8 +7,9 @@
 #include<stdlib.h>
 #include "common/bits.h"
 #include "common/notify.h"
- #include "load.h"
- #include "mem.h"
+#include "load.h"
+#include "mem.h"
+
  #include "elf/relocator.h"
 
 
@@ -16,11 +17,11 @@
 /*--------------------------------------------------------------------------  */
 /**
  * @param fp le fichier elf original
- * @param seg le segment à reloger
+ * @param seg le segment Ã  reloger
  * @param mem l'ensemble des segments
  *
- * @brief Cette fonction effectue la relocation du segment passé en parametres
- * @brief l'ensemble des segments doit déjà avoir été chargé en memoire.
+ * @brief Cette fonction effectue la relocation du segment passÃ© en parametres
+ * @brief l'ensemble des segments doit dÃ©jÃ  avoir Ã©tÃ© chargÃ© en memoire.
  *
  * VOUS DEVEZ COMPLETER CETTE FONCTION POUR METTRE EN OEUVRE LA RELOCATION !!
  */
@@ -30,12 +31,20 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
     Elf32_Rel *rel = NULL;
     char* reloc_name = malloc(strlen(seg.name)+strlen(RELOC_PREFIX_STR)+1);
     scntab section_tab;
+    
+    unsigned int S = seg.start._32;
+    unsigned int P, V, A, AHL, AHI, ALO;
+    int i;
+
+   byte* tab_byte = calloc(4,sizeof(*tab_byte));
+
+    
 
     // on recompose le nom de la section
     memcpy(reloc_name,RELOC_PREFIX_STR,strlen(RELOC_PREFIX_STR)+1);
     strcat(reloc_name,seg.name);
 
-    // on récupere le tableau de relocation et la table des sections
+    // on rÃ©cupere le tableau de relocation et la table des sections
     rel = (Elf32_Rel *)elf_extract_scn_by_name( ehdr, fp, reloc_name, &scnsz, NULL );
     elf_load_scntab(fp ,32, &section_tab);
 
@@ -52,13 +61,88 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
         INFO_MSG("--------------Relocation de %s-------------------\n",seg.name) ;
         INFO_MSG("Nombre de symboles a reloger: %ld\n",scnsz/sizeof(*rel)) ;
 
-	 printf("Relocation segment %s : \n Offset : %d \n Info : %x \n\n",seg.name,(rel+1)->r_offset,(rel+1)->r_info);
+/* Debug
+
+	 printf("Relocation segment %s : \n Offset : %x \n Info : %8x \n\n",seg.name,(rel+1)->r_offset,(rel+1)->r_info);
 	 printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+1)->r_info),ELF32_R_SYM((rel+1)->r_info));
-        //------------------------------------------------------
 
-        //TODO : faire la relocation ICI !
+*/
 
-        //------------------------------------------------------
+
+	for (i=0; i<scnsz/sizeof(*rel); i++){
+
+		P = (rel+i)->r_offset;
+		word mot = seg.content[P];
+		FLIP_ENDIANNESS( mot );
+	
+		switch (ELF32_R_TYPE((rel+i)->r_info)){
+		
+			case (2) :
+				A = mot;
+				V = S + A;
+				
+				mot = FLIP_ENDIANNESS(V);
+				decouper_word(&tab_byte,mot);
+				seg.content[P] = tab_byte[0];
+				seg.content[P+1] = tab_byte[1];
+				seg.content[P+2] = tab_byte[2];
+				seg.content[P+3] = tab_byte[3];
+
+				
+				break;
+
+			case (4) :
+				A = mot;
+				V =  ((A <<2)|((P&0xf0000000)+S))>>2;
+				
+				mot = FLIP_ENDIANNESS(V);
+				decouper_word(&tab_byte,mot);
+				seg.content[P] = tab_byte[0];
+				seg.content[P+1] = tab_byte[1];
+				seg.content[P+2] = tab_byte[2];
+				seg.content[P+3] = tab_byte[3];
+				
+				break;
+
+			case (5) :
+				AHI = mot;
+				ALO = FLIP_ENDIANNESS( seg.content[(rel+i+1)->r_offset] );
+				AHL =  (AHI << 16) + (unsigned int short)(ALO);
+				V = ( AHL + S - (unsigned int short)(AHL + S)) >> 16;
+				
+				mot = FLIP_ENDIANNESS(V);
+				decouper_word(&tab_byte,mot);
+				seg.content[P] = tab_byte[0];
+				seg.content[P+1] = tab_byte[1];
+				seg.content[P+2] = tab_byte[2];
+				seg.content[P+3] = tab_byte[3];
+
+				break;
+
+			case (6) :
+				ALO = mot;
+				AHI = FLIP_ENDIANNESS( seg.content[(rel+i-1)->r_offset] );
+				AHL =  (AHI << 16) + (unsigned int short)(ALO);
+				V = AHL + S;
+				
+				mot = FLIP_ENDIANNESS(V);
+				decouper_word(&tab_byte,mot);
+				seg.content[P] = tab_byte[0];
+				seg.content[P+1] = tab_byte[1];
+				seg.content[P+2] = tab_byte[2];
+				seg.content[P+3] = tab_byte[3];
+
+				break;
+
+			default :
+				ERROR_MSG("Erreur dans le type de la relocation dans le segment %s\n",seg.name);
+
+		}
+
+		
+	}
+
+
 
     }
     del_scntab(section_tab);
@@ -73,7 +157,7 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
 // Fonction permettant de verifier si une chaine de caracteres
 // est bien dans la liste des symboles du fichier ELF
 // parametres :
-// 		name : le nom de la chaine recherchée
+// 		name : le nom de la chaine recherchÃ©e
 //  symtab : la table des symboles
 //
 // retourne 1 si present, 0 sinon
@@ -85,13 +169,13 @@ int is_in_symbols(char* name, stab symtab) {
     return 0;
 }
 
-// Cette fonction calcule le nombre de segments à prevoir
+// Cette fonction calcule le nombre de segments Ã  prevoir
 // Elle cherche dans les symboles si les sections predefinies
 // s'y trouve
 // parametres :
 //  symtab : la table des symboles
 //
-// retourne le nombre de sections trouvées
+// retourne le nombre de sections trouvÃ©es
 
 unsigned int get_nsegments(stab symtab,char* section_names[],int nb_sections) {
     unsigned int n=0;
@@ -103,13 +187,13 @@ unsigned int get_nsegments(stab symtab,char* section_names[],int nb_sections) {
 }
 
 
-// fonction permettant d'extraire une section du fichier ELF et de la chargée dans le segment du même nom
+// fonction permettant d'extraire une section du fichier ELF et de la chargÃ©e dans le segment du mÃªme nom
 // parametres :
 //   fp         : le pointeur du fichier ELF
-//   memory     : la structure de mémoire virtuelle
-//   scn        : le nom de la section à charger
-//   permission : l'entier représentant les droits de lecture/ecriture/execution
-//   add_start  : l'addresse virtuelle à laquelle la section doit être chargée
+//   memory     : la structure de mÃ©moire virtuelle
+//   scn        : le nom de la section Ã  charger
+//   permission : l'entier reprÃ©sentant les droits de lecture/ecriture/execution
+//   add_start  : l'addresse virtuelle Ã  laquelle la section doit Ãªtre chargÃ©e
 //
 // retourne 0 en cas de succes, une valeur non nulle sinon
 int elf_load_section_in_memory(FILE* fp, mem memory, char* scn,unsigned int permissions,unsigned long long add_start) {
@@ -169,7 +253,7 @@ int elf_load_section_in_memory(FILE* fp, mem memory, char* scn,unsigned int perm
 
 // fonction affichant les octets d'un segment sur la sortie standard
 // parametres :
-//   seg        : le segment de la mémoire virtuelle à afficher
+//   seg        : le segment de la mÃ©moire virtuelle Ã  afficher
 
 void print_segment_raw_content(segment* seg) {
     int k;
@@ -185,7 +269,7 @@ void print_segment_raw_content(segment* seg) {
 }
 
 
-// la foncrion load charge un fichier elf en entrée
+// la foncrion load charge un fichier elf en entrÃ©e
 //
 int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
 {
@@ -202,7 +286,7 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
     stab* symtab = param.p_symtab;
 
 
-    unsigned int next_segment_start = *(param.p_adresse_start); // compteur pour designer le début de la prochaine section
+    unsigned int next_segment_start = *(param.p_adresse_start); // compteur pour designer le dÃ©but de la prochaine section
 
 
     if ((pf_elf = fopen(nom_fichier,"r")) == NULL) {
@@ -232,7 +316,7 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
     for (i=0; i<NB_SECTIONS; i++) {
         if (is_in_symbols(section_names[i],*symtab)) {
             elf_load_section_in_memory(pf_elf,*memory, section_names[i],segment_permissions[i],next_segment_start);
-            next_segment_start+= (((*memory)->seg[j].size._32+0x1000)>>12 )<<12; // on arrondit au 1k suppérieur
+            next_segment_start+= (((*memory)->seg[j].size._32+0x1000)>>12 )<<12; // on arrondit au 1k suppÃ©rieur
             //print_segment_raw_content(&(*memory)->seg[j]);
             j++;
         }
@@ -240,7 +324,7 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
 
     //Allouer la pile (et donc modifier le nb de segments)
 
-    // On remplit les champs mémoire du segment de la pile
+    // On remplit les champs mÃ©moire du segment de la pile
     (*memory)->seg[j].name=strdup("[Stack]"); 
     (*memory)->seg[j].attr=SCN_ATTR(1,RW_);
     (*memory)->seg[j].size._32 = STACKSZ_BYTES;
@@ -255,7 +339,7 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
     }
 
 
-    // On remplit les champs mémoire du segment Vsyscall
+    // On remplit les champs mÃ©moire du segment Vsyscall
     (*memory)->seg[j+1].name=strdup("[Vsyscall]"); 
     (*memory)->seg[j+1].attr=SCN_ATTR(1,RW_);
     (*memory)->seg[j+1].size._32 = VSYCALLZ_BYTES;
@@ -275,7 +359,7 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
     //------------------------------------ Relocation -------------------------------------------- //
     DEBUG_MSG("-------------- Avant Relocation -------------------\n");
     reloc_segment(pf_elf, (*memory)->seg[0], *memory,endianness,*symtab);
-    DEBUG_MSG("-------------- Après Relocation -------------------\n");
+    DEBUG_MSG("-------------- AprÃ¨s Relocation -------------------\n");
 
     fclose(pf_elf);
     return 0;
