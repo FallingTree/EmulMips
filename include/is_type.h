@@ -6,17 +6,18 @@
 
 #include "common/bits.h"
 #include "common/notify.h"
+#include <math.h>
 #include <ctype.h>
 #include <limits.h>
 
 /* type de token */
-enum {HEXA,INTEGER32,INTEGER8,INTEGER,OBJET,REG,RANGE,UNKNOWN};
+enum {HEXA32, HEXA8,INTEGER32,INTEGER8,OBJET,REG,RANGE,UNKNOWN};
 
-
-int is_hexa(char* chaine);
+unsigned int convertir_string_add(char* string);
+int is_hexa32(char* chaine);
+int is_hexa8(char* chaine);
 int is_integer32(char* chaine);
 int is_integer8(char* chaine) ;
-int is_integer(char* chaine);
 int is_objet(char* chaine);
 int is_reg(char* chaine);
 int is_range(char* chaine);

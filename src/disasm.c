@@ -20,6 +20,7 @@
  #include "load.h"
  #include "is_type.h"
  #include "elf/syms.h"
+ #include "trouver.h"
 
 //Cette fonction modifie les pointeurs p_i_text, p_adrtext et p_size_text pour obtenir le numéro du segment .text,
 //son adresse et sa taille
@@ -117,7 +118,11 @@ int disasmcmd(interpreteur inter,pm_glob param)
 		//--------------------------Vérification des paramètres--------------------------//
 
 
-		if (!is_range(token)) return 1;
+		if (!is_range(token)) 
+		{
+			WARNING_MSG("Le paramètre doit être une plage d'adresse");
+			return 1;
+		}
 
 		//On extrait les deux adresses de la plage
 		char* ad1 =NULL;

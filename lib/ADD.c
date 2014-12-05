@@ -16,10 +16,10 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	int32_t a, b ; //Valeur signée sur 32bits
 
 	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
-	b = inst.immediate ;			
+	b = registre[inst.rt].content ;			
 	val_s = a + b;
 
-	if (val_s>UINT_MAX)
+	if ((val_s>INT32_MAX) || (val_s<INT32_MIN))
 		WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
 	else registre[inst.rd].content = val_s ;
 	return 0;

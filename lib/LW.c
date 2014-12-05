@@ -7,21 +7,9 @@
 #include "emul.h"
 #include "mem.h"
 #include "is_type.h"
+#include "trouver.h"
 #include "common/notify.h"
 
-//Fonction qui permet de trouver le segment correspondant à une adresse donnée
-int trouver_seg_adresse(int adresse,pm_glob param){
-	int i;
-
-	 for ( i= 0; i < (*(param.p_memory))->nseg-1; i++ ) {
-		if ( (*(param.p_memory))->seg[i].start._32 <= adresse && (*(param.p_memory))->seg[i+1].start._32>adresse) return i;
-	}
-	
-	//Cas où il s'agit du dernier segment
-	if ( (*(param.p_memory))->seg[i+1].start._32<=adresse) return i+1;
-
-	return -1; //Si ne se trouve pas dans la mémoire
-}
 
 int exec(unsigned int* jump, pm_glob param, INST inst){
 
@@ -30,16 +18,33 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	byte base = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
 	short int off = (short int) inst.offset;			
 	unsigned int adresse = base + off;
-	byte octect[4];
-	int seg = trouver_seg_adresse(adresse, param);
 
-	printf("%d\n", inst.rs);
-	byte * p_content_mem = (*(param.p_memory))->seg[seg].content + (adresse - (*(param.p_memory))->seg[seg].start._32);
+	if (adresse%4!=0) 
+	{	
+		WARNING_MSG("L'adresse calculée n'est pas multiple de 4\n");		
+		return -1;
+	}
+
+	byte octect[4];
+	int i_seg = trouver_seg_adresse(adresse, param); //Indice du segment qui contient l'adresse calculée
+	int i_adresse_mem = adresse - (*(param.p_memory))->seg[i_seg].start._32; //Indice de l'adresse calculée dans le segment
+	int size_seg = (*(param.p_memory))->seg[i_seg].size._32; //Taille du segment calculé
+
+	//On considère que les parties vides de la mémoire ont la valeur 0
+	if (i_adresse_mem >= size_seg) 
+	{	
+		registre[inst.rt].content = 0;
+		return 0;
+	}
+
+	byte * p_content_mem = (*(param.p_memory))->seg[i_seg].content + (i_adresse_mem);
 
 	octect[0] = *p_content_mem;
 	octect[1] = * (p_content_mem + 1);
 	octect[2] = * (p_content_mem + 2);
 	octect[3] = * (p_content_mem + 3);
+
+	printf("!!!\n");
 
 	word mot= (octect[0] >> 24) + (octect[1] >> 16) + (octect[2] >> 8) + octect[0];
 

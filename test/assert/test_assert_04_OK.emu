@@ -1,7 +1,8 @@
 #-------
-#TEST_RETURN_CODE=PASS     
+#TEST_RETURN_CODE=PASS
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-set mem byte 0x300a 400
-assert byte 0x300a 400
+load boucle.o
+set mem byte 0x300a 0x40
+assert byte 0x300a 0x40

@@ -12,7 +12,7 @@
 int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
-	registre[inst.rt].content = registre[inst.rs].content & inst.immediate ;
+	registre[inst.rd].content = registre[inst.rs].content & registre[inst.rt].content ;
 	return 0;
 }
 

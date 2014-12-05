@@ -18,5 +18,5 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 int print(){
 	printf("Fonction BREAK\n");
-	return 0;
+	return -1;
 }

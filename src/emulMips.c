@@ -22,7 +22,7 @@
 #include "dico.h"
 #include "disasm.h"
 #include "emul.h"
-
+#include "trouver.h"
 
 int main ( int argc, char *argv[] ) {
 

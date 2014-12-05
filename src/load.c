@@ -23,7 +23,6 @@
  * @brief Cette fonction effectue la relocation du segment passé en parametres
  * @brief l'ensemble des segments doit déjà avoir été chargé en memoire.
  *
- * VOUS DEVEZ COMPLETER CETTE FONCTION POUR METTRE EN OEUVRE LA RELOCATION !!
  */
 void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,stab symtab) {
     byte *ehdr    = __elf_get_ehdr( fp );
@@ -32,9 +31,9 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
     char* reloc_name = malloc(strlen(seg.name)+strlen(RELOC_PREFIX_STR)+1);
     scntab section_tab;
     
-    unsigned int S;
-    unsigned int P, V, A, AHL, AHI, ALO;
-    int i,precedent_R_MIPS_HI16 = 0;
+ 
+    unsigned int S,P, V, A, AHL, AHI, ALO;
+    int i;
 
    byte* tab_byte = calloc(4,sizeof(*tab_byte));
 
@@ -66,20 +65,21 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
 
 		
 		FLIP_ENDIANNESS((rel+i)->r_info);
-		if (!precedent_R_MIPS_HI16) FLIP_ENDIANNESS((rel+i)->r_offset);
+		FLIP_ENDIANNESS((rel+i)->r_offset);
 
 		P = (rel+i)->r_offset;
 
-		word mot = seg.content[P];
+		word mot = *((word*) &seg.content[P]);
 		FLIP_ENDIANNESS( mot );
 		
-		 S = symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32;
 
-		printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+i)->r_info),ELF32_R_SYM((rel+i)->r_info)); //debug
-		printf("Relocation du symbole : %s \n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].name);
-		printf("Adresse du symbole : 0x%08x\n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32);
+		S = symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32;
 
+		//printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+i)->r_info),ELF32_R_SYM((rel+i)->r_info)); //debug
+		//printf("Relocation du symbole : %s \n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].name);
+		//printf("Adresse du symbole : 0x%08x\n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32);
 
+		//printf("Mot avant relocation : %08x\n",mot);
 		switch (ELF32_R_TYPE((rel+i)->r_info)){
 		
 			case (2) :
@@ -87,44 +87,52 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
 				V = S + A;
 				
 				FLIP_ENDIANNESS(V);
-				seg.content[P]= V;
-				
-
+				*((word*) &seg.content[P])= V;
 				
 				break;
 
 			case (4) :
-				A = mot;
-				V =  ((A <<2)|((P&0xf0000000)+S))>>2;
+				A = mot & 0x00FFFFFF;
+				V =  ((A <<2)|((P & 0xf0000000)+S))>>2;
 				
-				FLIP_ENDIANNESS(V);
-				seg.content[P]= V;
+				
+				mot = (mot & 0xFF000000) | (V & 0x00FFFFFF);
+				FLIP_ENDIANNESS(mot);
+				*((word*) &seg.content[P])= mot;
 				
 				break;
 
 			case (5) :
-				AHI = mot;
-				FLIP_ENDIANNESS(((rel+i+1)->r_offset));
-				precedent_R_MIPS_HI16 = 1;
-				ALO = seg.content[(rel+i+1)->r_offset];
-				FLIP_ENDIANNESS(ALO);
-				AHL =  (AHI << 16) + (unsigned int short)(ALO);
-				V = ( AHL + S - (unsigned int short)(AHL + S)) >> 16;
+				AHI = mot & 0x0000FFFF;
 				
-				FLIP_ENDIANNESS(V);
-				seg.content[P]= V;
+				uint32_t ad = (rel+i+1)->r_offset;
+
+				FLIP_ENDIANNESS(ad);
+
+				ALO = *((word*) &seg.content[ad]);
+				FLIP_ENDIANNESS(ALO);
+				ALO = ALO& 0x0000FFFF;
+
+				AHL =  (AHI << 16) + (short)(ALO);
+				//printf("AHI : %08x, ALO : %08x et AHL : %08x \n",AHI,ALO,AHL);
+				V = ( AHL + S - ((short)(AHL + S))) >> 16;
+				//printf("V : : %08x\n",V);
+				mot = (mot&0xFFFF0000) | (V&0x0000FFFF);
+				FLIP_ENDIANNESS(mot);
+				*((word*) &seg.content[P])= mot;
 
 				break;
 
 			case (6) :
 				ALO = mot;
-				AHI = seg.content[(rel+i-1)->r_offset] ;
-				FLIP_ENDIANNESS(AHI);
-				AHL =  (AHI << 16) + (unsigned int short)(ALO);
+				//AHI = *((word*) &seg.content[(rel+i-1)->r_offset]) ;
+				//FLIP_ENDIANNESS(AHI);
+				AHL =  (AHI << 16) + (short)(ALO);
 				V = AHL + S;
 				
-				FLIP_ENDIANNESS(V);
-				seg.content[P]= V;
+				mot = (mot&0xFFFF0000) | (V&0x0000FFFF);
+				FLIP_ENDIANNESS(mot);
+				*((word*) &seg.content[P])= mot;
 
 				break;
 
@@ -132,8 +140,10 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
 				ERROR_MSG("Erreur dans le type de la relocation dans le segment %s\n",seg.name);
 
 		}
-
 		
+		mot = *((word*) &seg.content[P]);
+		FLIP_ENDIANNESS( mot );
+		//printf("Mot après relocation : %08x\n",mot);
 	}
 
 
@@ -348,16 +358,17 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
                         return 1;
     }
 
-    stab32_print( *symtab );
+
 
     //------------ Remplissage de la table des symboles pour l'adresse des segments -------------- //
 
     for (i=0; i < nsegments; i++){
 	
-	symtab->sym[i].addr._32 = (*memory)->seg[i].start._32;
+	symtab->sym[i+1].addr._32 = (*memory)->seg[i].start._32;
 
     }
 
+    stab32_print( *symtab );
 
     //------------------------------------ Relocation -------------------------------------------- //
     for (i=0; i<nsegments; i++) {

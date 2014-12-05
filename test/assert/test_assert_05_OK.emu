@@ -3,5 +3,6 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-set mem byte 0x300a 0x3
-assert byte 0x300a 0x3
+load boucle.o
+set mem byte 0x300a 40
+assert byte 0x300a 40

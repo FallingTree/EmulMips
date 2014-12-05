@@ -1,0 +1,9 @@
+#-------
+#TEST_RETURN_CODE=PASS           
+#TEST_COMMENT="Test d'ouverture d'un fichier"
+#-------
+
+load boucle.o
+load relocation.o
+load procedure.o
+

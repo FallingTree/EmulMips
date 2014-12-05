@@ -7,21 +7,9 @@
 #include "emul.h"
 #include "mem.h"
 #include "is_type.h"
+#include "trouver.h"
 #include "common/notify.h"
 
-//Fonction qui permet de trouver le segment correspondant à une adresse donnée
-int trouver_seg_adresse(int adresse,pm_glob param){
-	int i;
-
-	 for ( i= 0; i < (*(param.p_memory))->nseg-1; i++ ) {
-		if ( (*(param.p_memory))->seg[i].start._32 <= adresse && (*(param.p_memory))->seg[i+1].start._32>adresse) return i;
-	}
-	
-	//Cas où il s'agit du dernier segment
-	if ( (*(param.p_memory))->seg[i+1].start._32<=adresse) return i+1;
-
-	return -1; //Si ne se trouve pas dans la mémoire
-}
 
 int exec(unsigned int* jump, pm_glob param, INST inst){
 
@@ -33,9 +21,41 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	short int off_val = (short) inst.offset;			
 	unsigned int adresse = base + off_val;
 
-	int seg = trouver_seg_adresse(adresse,param);
+	int i_seg = trouver_seg_adresse(adresse,param);
+	int i_adresse_mem = adresse - (*(param.p_memory))->seg[i_seg].start._32; //Indice de l'adresse calculée dans le segment
+	int size_seg = (*(param.p_memory))->seg[i_seg].size._32; //Taille du segment calculé
 
-	byte * p_content_mem = (*(param.p_memory))->seg[seg].content + (adresse - (*(param.p_memory))->seg[seg].start._32);
+	byte * content_etendu;
+	int i;
+
+
+
+	if (i_adresse_mem >= size_seg) 
+	{	
+					
+				
+		WARNING_MSG("Attention : Adresse hors de la zone allouée\n Allocation des bytes manquants\n");
+
+		content_etendu = calloc(i_adresse_mem, sizeof(byte)); //Allocation du contenu étendu
+		
+		//Les premiers bytes du tableau sont ceux déjà contenus dans la mémoire	
+		for(i=0 ; i<size_seg ; i++)
+		{
+			content_etendu[i] = (*(param.p_memory))->seg[i_seg].content[i];
+		}					
+
+		//On initialise à 0 les bytes suivants
+		for(i=size_seg ; i<=i_adresse_mem ; i++)
+		{
+			content_etendu[i] = 0;
+		}
+		
+		(*(param.p_memory))->seg[i_seg].content = content_etendu;
+				
+
+	}
+
+	byte * p_content_mem = (*(param.p_memory))->seg[i_seg].content + (i_adresse_mem);
 
 	* p_content_mem = rt_val;
 

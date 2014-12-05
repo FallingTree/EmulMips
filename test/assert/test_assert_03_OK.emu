@@ -4,5 +4,5 @@
 #-------
 
 load boucle.o
-set mem word 0x500c 32
-assert word 0x500c 32
+set mem word 0x300c 32
+assert word 0x300c 32

@@ -20,7 +20,7 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	val_s = a + b;
 
-	if (val_s>UINT_MAX)
+	if ((val_s>INT32_MAX) || (val_s<INT32_MIN))
 		WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");
 	else registre[inst.rt].content = val_s ;
 	return 0;

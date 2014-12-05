@@ -1,2 +1,2 @@
-load simple_multdivswlw.o
-run
+load procedure.o
+disp mem 0xfffff000+5000

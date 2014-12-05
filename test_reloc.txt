@@ -1,1 +1,1 @@
-load relocation.o
+load relocation.o  0x3000

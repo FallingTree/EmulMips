@@ -61,10 +61,6 @@ typedef struct {
 } *interpreteur;
 
 void decouper_word_hexa(char* chaine, byte** tab);
-int trouver_seg_adresse(int adresse,pm_glob param);
-word trouver_mot_adresse(int adresse, pm_glob param);
-byte trouver_byte_adresse(int adresse, pm_glob param);
-int convertir_string_add(char* string);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);
 char* get_next_token(interpreteur inter);
