@@ -46,13 +46,3 @@ byte * __flip_endianness( byte * blocks, uint sz ) {
     return blocks;
 }
 
-void decouper_word(byte** tab_byte, word mot){
-
-	
-	*tab_byte[0] = (byte) FLIP_ENDIANNESS( mot ) & 0x000000ff ;
-	*tab_byte[1] = (byte) FLIP_ENDIANNESS( mot ) & 0x0000ff00 ;
-	*tab_byte[2] = (byte) FLIP_ENDIANNESS( mot ) & 0x00ff0000 ;
-	*tab_byte[3] = (byte) FLIP_ENDIANNESS( mot ) & 0xff000000 ;
-
-
-}

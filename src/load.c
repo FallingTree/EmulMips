@@ -32,9 +32,9 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
     char* reloc_name = malloc(strlen(seg.name)+strlen(RELOC_PREFIX_STR)+1);
     scntab section_tab;
     
-    unsigned int S = seg.start._32;
+    unsigned int S;
     unsigned int P, V, A, AHL, AHI, ALO;
-    int i;
+    int i,precedent_R_MIPS_HI16 = 0;
 
    byte* tab_byte = calloc(4,sizeof(*tab_byte));
 
@@ -48,9 +48,8 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
     rel = (Elf32_Rel *)elf_extract_scn_by_name( ehdr, fp, reloc_name, &scnsz, NULL );
     elf_load_scntab(fp ,32, &section_tab);
 
-    if (rel == NULL) DEBUG_MSG("BOUYA\n %s",seg.name);
-    // Tests
-    DEBUG_MSG("-------------- Pendant Relocation -------------------\n"); 
+    if (rel == NULL) DEBUG_MSG("Pas de relocation pour le segment \n %s",seg.name);
+     
    
     
 
@@ -61,32 +60,35 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
         INFO_MSG("--------------Relocation de %s-------------------\n",seg.name) ;
         INFO_MSG("Nombre de symboles a reloger: %ld\n",scnsz/sizeof(*rel)) ;
 
-/* Debug
-
-	 printf("Relocation segment %s : \n Offset : %x \n Info : %8x \n\n",seg.name,(rel+1)->r_offset,(rel+1)->r_info);
-	 printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+1)->r_info),ELF32_R_SYM((rel+1)->r_info));
-
-*/
 
 
 	for (i=0; i<scnsz/sizeof(*rel); i++){
 
+		
+		FLIP_ENDIANNESS((rel+i)->r_info);
+		if (!precedent_R_MIPS_HI16) FLIP_ENDIANNESS((rel+i)->r_offset);
+
 		P = (rel+i)->r_offset;
+
 		word mot = seg.content[P];
 		FLIP_ENDIANNESS( mot );
-	
+		
+		 S = symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32;
+
+		printf("TYPE : %d \n SYM : %d \n",ELF32_R_TYPE((rel+i)->r_info),ELF32_R_SYM((rel+i)->r_info)); //debug
+		printf("Relocation du symbole : %s \n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].name);
+		printf("Adresse du symbole : 0x%08x\n",symtab.sym[ELF32_R_SYM((rel+i)->r_info)].addr._32);
+
+
 		switch (ELF32_R_TYPE((rel+i)->r_info)){
 		
 			case (2) :
 				A = mot;
 				V = S + A;
 				
-				mot = FLIP_ENDIANNESS(V);
-				decouper_word(&tab_byte,mot);
-				seg.content[P] = tab_byte[0];
-				seg.content[P+1] = tab_byte[1];
-				seg.content[P+2] = tab_byte[2];
-				seg.content[P+3] = tab_byte[3];
+				FLIP_ENDIANNESS(V);
+				seg.content[P]= V;
+				
 
 				
 				break;
@@ -95,42 +97,34 @@ void reloc_segment(FILE* fp, segment seg, mem memory,unsigned int endianness,sta
 				A = mot;
 				V =  ((A <<2)|((P&0xf0000000)+S))>>2;
 				
-				mot = FLIP_ENDIANNESS(V);
-				decouper_word(&tab_byte,mot);
-				seg.content[P] = tab_byte[0];
-				seg.content[P+1] = tab_byte[1];
-				seg.content[P+2] = tab_byte[2];
-				seg.content[P+3] = tab_byte[3];
+				FLIP_ENDIANNESS(V);
+				seg.content[P]= V;
 				
 				break;
 
 			case (5) :
 				AHI = mot;
-				ALO = FLIP_ENDIANNESS( seg.content[(rel+i+1)->r_offset] );
+				FLIP_ENDIANNESS(((rel+i+1)->r_offset));
+				precedent_R_MIPS_HI16 = 1;
+				ALO = seg.content[(rel+i+1)->r_offset];
+				FLIP_ENDIANNESS(ALO);
 				AHL =  (AHI << 16) + (unsigned int short)(ALO);
 				V = ( AHL + S - (unsigned int short)(AHL + S)) >> 16;
 				
-				mot = FLIP_ENDIANNESS(V);
-				decouper_word(&tab_byte,mot);
-				seg.content[P] = tab_byte[0];
-				seg.content[P+1] = tab_byte[1];
-				seg.content[P+2] = tab_byte[2];
-				seg.content[P+3] = tab_byte[3];
+				FLIP_ENDIANNESS(V);
+				seg.content[P]= V;
 
 				break;
 
 			case (6) :
 				ALO = mot;
-				AHI = FLIP_ENDIANNESS( seg.content[(rel+i-1)->r_offset] );
+				AHI = seg.content[(rel+i-1)->r_offset] ;
+				FLIP_ENDIANNESS(AHI);
 				AHL =  (AHI << 16) + (unsigned int short)(ALO);
 				V = AHL + S;
 				
-				mot = FLIP_ENDIANNESS(V);
-				decouper_word(&tab_byte,mot);
-				seg.content[P] = tab_byte[0];
-				seg.content[P+1] = tab_byte[1];
-				seg.content[P+2] = tab_byte[2];
-				seg.content[P+3] = tab_byte[3];
+				FLIP_ENDIANNESS(V);
+				seg.content[P]= V;
 
 				break;
 
@@ -309,7 +303,8 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
     nsegments = get_nsegments(*symtab,section_names,NB_SECTIONS);
 
     // allouer la memoire virtuelle (On met nsegments+2 pour prendre en compte la stack et Vsyscall qui n'est pas lu dans le fichier)
-    *memory=init_mem(nsegments+2);
+    nsegments+=2;
+    *memory=init_mem(nsegments);
 	
     // Ne pas oublier d'allouer les differentes sections
     j=0;
@@ -353,13 +348,25 @@ int load (pm_glob param, FILE* pf_elf,char* nom_fichier)
                         return 1;
     }
 
-    //stab32_print( *symtab );
+    stab32_print( *symtab );
+
+    //------------ Remplissage de la table des symboles pour l'adresse des segments -------------- //
+
+    for (i=0; i < nsegments; i++){
+	
+	symtab->sym[i].addr._32 = (*memory)->seg[i].start._32;
+
+    }
 
 
     //------------------------------------ Relocation -------------------------------------------- //
-    DEBUG_MSG("-------------- Avant Relocation -------------------\n");
-    reloc_segment(pf_elf, (*memory)->seg[0], *memory,endianness,*symtab);
-    DEBUG_MSG("-------------- Après Relocation -------------------\n");
+    for (i=0; i<nsegments; i++) {
+
+	    reloc_segment(pf_elf, (*memory)->seg[i], *memory,endianness,*symtab);
+	    
+    }
+
+    DEBUG_MSG("-------------- Relocation réussi -------------------\n");
 
     fclose(pf_elf);
     return 0;
