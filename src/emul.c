@@ -41,7 +41,7 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 			// printf("Youpi !\n");//debug
 			if (((*(param.p_tab_instructions))[i].fonction)==NULL)
 			{
-				printf("Erreur : instruction %s non exéctuée\n",nom);
+				ERROR_MSG("Erreur : instruction %s non exéctuée\n",nom);
 				return 0;
 			}
 		
@@ -49,7 +49,7 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 
 			if (load_fonction)
 			{
-				printf("Erreur : instruction %s non exéctuée\n",nom);
+				ERROR_MSG("Erreur : instruction %s non exéctuée\n",nom);
 				return 0;
 			}
 
@@ -58,7 +58,7 @@ int emul (unsigned int * p_jump, pm_glob param, INST inst)
 		
 	}
 
-	printf("Erreur : instruction %s non exéctuée\n",nom);
+	ERROR_MSG("Erreur : instruction %s non exéctuée\n",nom);
 	return 0;
 
 }

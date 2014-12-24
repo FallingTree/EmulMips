@@ -22,77 +22,6 @@
  #include "elf/syms.h"
  #include "trouver.h"
 
-//Cette fonction modifie les pointeurs p_i_text, p_adrtext et p_size_text pour obtenir le numéro du segment .text,
-//son adresse et sa taille
-
-int trouver_seg_text (pm_glob param, int* p_i_text, unsigned int * p_adrtext, unsigned int *p_size_text)
-{
-	mem memory = *(param.p_memory);
-
-	//On récupère le numéro du segment .text dans la mémoire
-	int i_text=0;
-	if (memory->seg[i_text].name==NULL) 
-	{
-		WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-		return 1;
-	}		
-	while (strcmp(memory->seg[i_text].name,".text")!=0)
-	{
-		i_text=i_text+1;
-		if (i_text>NB_SECTIONS) 
-		{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-			return 1;
-		}
-	}
-
-	//Récupération de la valeur de l'adresse du segment .text
-
-	unsigned int adrtext;
-	switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-	{
-   	case 32 :
-		adrtext = memory->seg[i_text].start._32;
-        	break;
-    	default :
-        	return 1;
-    	}
-
-	*p_size_text = memory->seg[i_text].size._32 ; //On récupère la taille du segment .text
-
-	*p_i_text = i_text;
-	*p_adrtext = adrtext;
-	return 0;
-		
-}
-
-//Si une étiquette marque l'adresse passée en paramètre, on l'affiche
-
-int trouver_etiquette (unsigned int adresse, pm_glob param, int* p_i_etiquette)
-{
-	stab symtab = *param.p_symtab;
-	int i;
-	int i_seg; //Numéro du segment auquel appartient l'étiquette
-	unsigned int adr_seg ; //Adresse du segment auquel appartient l'étiquette
-	
-	for (i=0; i < (symtab.size) ; i++)
-	{
-		i_seg = symtab.sym[i].scnidx;
-		adr_seg = (*(param.p_memory))->seg[i_seg].start._32;
-
-		//printf("\n\n nom : %s   adresse_etiquette %x     numéro_seg %d\n",symtab.sym[i].name, symtab.sym[i].addr._32, i_seg);
-
-		//printf("  %x    \n",symtab.sym[i].addr._32 + adr_seg);
-
-		if ((symtab.sym[i].addr._32 + adr_seg - 0x00001000) == adresse)
-		{
-			*p_i_etiquette = i;
-			return 1;
-		}			
-	}
-
-	return 0;
-}
-
 
 int disasmcmd(interpreteur inter,pm_glob param) 
 {
@@ -104,7 +33,7 @@ int disasmcmd(interpreteur inter,pm_glob param)
 	//On vérifie qu'un fichier a été chargé en mémoire
 	if (memory==NULL)
 	{
-  		WARNING_MSG("Il faut d'abord charger un fichier objet/n");
+  		WARNING_MSG("Il faut d'abord charger un fichier objet\n");
 		return 1;
 	}	
 
@@ -120,7 +49,7 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 		if (!is_range(token)) 
 		{
-			WARNING_MSG("Le paramètre doit être une plage d'adresse");
+			WARNING_MSG("Le paramètre doit être une plage d'adresse\n");
 			return 1;
 		}
 
@@ -240,8 +169,8 @@ int disasmcmd(interpreteur inter,pm_glob param)
 
 				
 				char* t = tab_instructions[iinst].type;
-				unsigned int rd, rs, rt, sa, immediate, target, base = 0;
-				short int offset = 0;
+				int32_t rd, rs, rt, sa, target, base = 0;
+				int16_t offset, immediate = 0;
 				reg *registre = param.p_registre;
 
 			
@@ -291,20 +220,20 @@ int disasmcmd(interpreteur inter,pm_glob param)
 					}
 					else if (strcmp(t,"I")==0)
 					{
-						rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
-						rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
-						immediate = (motlu & 65535) ;//65535 = 1111111111111111
-						offset = (motlu & 65535) ;//65535 = 1111111111111111
+						rs = (motlu & 0x3E00000)/2097152; //0x3E00000 = 1111100000000000000000 en binaire, 2097152 = 2puis21
+						rt = (motlu & 0x1f0000)/65536 ;//0x1f0000 = 111110000000000000000 en binaire, 65536 = 2puis16
+						immediate = (motlu & 0xffff) ;//0xffff= 1111111111111111
+						offset = (motlu & 0xffff) ;//0xffff = 1111111111111111
 						base = rs;
 
 						if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
 								&&tab_instructions[iinst].var_op[4] ) 
-							printf("%s %s %u\n", registre[rt].name, registre[rs].name, immediate);
+							printf("%s %s %d\n", registre[rt].name, registre[rs].name, immediate);
 
 						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
 								&&tab_instructions[iinst].var_op[6] ) 
 							printf("%s %s %d\n", registre[rs].name, registre[rt].name, offset);
-
+						
 						else if (tab_instructions[iinst].var_op[1]&&tab_instructions[iinst].var_op[6]
 										&&tab_instructions[iinst].var_op[7]) 
 							printf("%s 0x%x(%s)\n", registre[rt].name, offset, registre[base].name);
@@ -314,13 +243,16 @@ int disasmcmd(interpreteur inter,pm_glob param)
 								printf("%s 0x%x\n", registre[rt].name, offset);
 							}
 
+						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[6]) 
+							printf("%s %u\n", registre[rs].name, offset);
+
 						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[4]) 
 							printf("%s %u\n", registre[rs].name, immediate);
 	
 						else if (tab_instructions[iinst].var_op[1]&&tab_instructions[iinst].var_op[4]) 
 							printf("%s %u\n", registre[rt].name, immediate);
 					
-						else WARNING_MSG("Opérandes mal définis");
+						else WARNING_MSG("Opérandes mal définis\n");
 					
 	
 					}
@@ -330,9 +262,9 @@ int disasmcmd(interpreteur inter,pm_glob param)
 									//L'instruction ne contient que 26bits.
 
 						//Affichage éventuel d'une étiquette
-						if (trouver_etiquette (target, param, &i_etiquette))
+						if (trouver_etiquette (target*4, param, &i_etiquette))
 							 printf("%s \n", (*param.p_symtab).sym[i_etiquette].name);
-						else printf("0x%x\n",  target);
+						else printf("0x%x\n",  target*4);
 					}
 				        else WARNING_MSG("Type d'instruction inconnu\n");
 
@@ -368,7 +300,7 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 
 	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) 
 	{
-		WARNING_MSG("Erreur lors du désassemblage des instructions");
+		WARNING_MSG("Erreur lors du désassemblage des instructions\n");
 		return 1;
 	}	
 
@@ -415,9 +347,8 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 
 			
 		char* t = tab_instructions[iinst].type;
-		unsigned int rd, rs, rt, sa, immediate, target = 0;
-		short int offset = 0;
-
+		int32_t rd, rs, rt, sa, target = 0;
+		int16_t offset, immediate = 0;
 		
 		if (iinst == nb_instructions) printf("Instruction inconnue\n");
 		else
@@ -451,6 +382,7 @@ int decode_instruction(word motlu, INST* p_instruction_disasm, pm_glob param)
 			}
 		       else WARNING_MSG("Type d'instruction inconnu\n");
 
+		
 
 			//Remplissage du tableau tab_instructions_decodees
 

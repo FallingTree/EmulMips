@@ -5,4 +5,5 @@
 
 load simple_multdivswlw.o
 break add 0x300c
+run
 assert reg lo -8

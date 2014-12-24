@@ -14,11 +14,12 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	reg *registre = param.p_registre;
 	int32_t a, b ; //Valeur signée sur 32bits
 
+
 	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
 	b = registre[inst.rt].content ;			
 
+	registre[inst.rd].content = (int32_t) a - b;
 
-	registre[inst.rd].content = a - b ;
 	return 0;
 
 }

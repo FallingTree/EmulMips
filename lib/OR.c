@@ -19,7 +19,7 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 	b = registre[inst.rt].content ;			
 	val_s = a | b;
 
-	registre[inst.rt].content = val_s;
+	registre[inst.rd].content = val_s;
 
 
 	return 0;

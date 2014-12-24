@@ -1,0 +1,11 @@
+#-------
+#TEST_RETURN_CODE=PASS        
+#TEST_COMMENT="Teste la réinitialisation des bp"
+#-------
+
+load boucle.o
+break add 0x3004
+load additions.o
+run
+assert reg $t4 22
+

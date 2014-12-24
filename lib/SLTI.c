@@ -14,8 +14,7 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 
-
-	int test = (int) registre[inst.rs].content < (int) inst.immediate;
+	int test = (int32_t) registre[inst.rs].content < (int32_t) inst.immediate;
 
 	registre[inst.rt].content = test;
 

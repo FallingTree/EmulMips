@@ -2,6 +2,6 @@
 #TEST_RETURN_CODE=PASS        
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
-load procedure.o
+load procedure.o 0x2000
 disp mem 0x2000:0x3200
 

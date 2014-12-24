@@ -76,7 +76,7 @@ void decouper_word_hexa(char* chaine, byte** tab){
 
 
 	b1[0]='0';
-	b1[1]='x';
+	b1[1]='x';			
 	b1[2]=adresse_c[4];
 	b1[3]=adresse_c[5];
 	b1[4]='\0';
@@ -250,10 +250,22 @@ int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 	int i_text;
 	unsigned int size_text ;
 	unsigned int ad_load;
+	char nom_fichier[50] ;
+	strcpy(nom_fichier, "programmes/");
 
+	char* token = get_next_token (inter);
+
+	printf("Réinitialisation des registres, suppression des breakpoints\n");			
+
+	*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
+	init_reg(param.p_registre);
+
+	inter->etat = NOT_STARTED ;
+
+	if (token==NULL) return 1;
 
 	//On récupère le nom du fichier à ouvrir
-	char *nom_fichier = get_next_token (inter);
+	strcat(nom_fichier, token);
 
 	//Ainsi que l'adresse du premier segment
 	
@@ -377,20 +389,22 @@ int dispcmd(interpreteur inter,pm_glob param) {
 
 					if (vad1>=vad2) 
 					{
-						printf("La seconde adresse doit être plus grande que la première");
+						WARNING_MSG("La seconde adresse doit être plus grande que la première");
 						return 1;
 					}
 
-					//printf("Adresse 1 : %x\n",vad1);
-					//printf("Adresse 2 : %x\n",vad2);
+					printf("Adresse 1 : %x\n",vad1);
+					printf("Adresse 2 : %x\n",vad2);
 
 					//On récupère les segments correspondants des adresses
 					int seg_1=trouver_seg_adresse(vad1, param);
 					int seg_2=trouver_seg_adresse(vad2, param);
+					printf("Segment 1 : %d\n",seg_1);
+					printf("Segment 2 : %d\n",seg_2);
 
-					if (seg_1==-1 || seg_2==-1 )
+					if (seg_1==-1 || seg_2== -1)
 					{
-						printf("Erreur : Adresse d'un segment non en mémoire\n");
+						WARNING_MSG("Erreur : Adresse d'un segment non en mémoire\n");
 						return 1;
 					}
 
@@ -437,8 +451,9 @@ int dispcmd(interpreteur inter,pm_glob param) {
 				return 0;
 			}
 			else 
-			{printf("pas plage\n");
-			return 1; 			
+			{	
+				WARNING_MSG("pas plage\n");
+				return 1; 			
 			}
 		}
 	
@@ -513,9 +528,6 @@ int setcmd(interpreteur inter,pm_glob param)
 	int reg_num, adresse, valeur;
 	byte* mot_cut=calloc(4,sizeof(*mot_cut));
 	char ** endptr = NULL;
-	byte *content_etendu ;
-	int i;
-	
 
 	token = get_next_token (inter);
 	if (token==NULL) return 1;	
@@ -549,27 +561,12 @@ int setcmd(interpreteur inter,pm_glob param)
 				int size_seg = (*(param.p_memory))->seg[iseg].size._32; //Taille en nombre de bytes du segment
 
 				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
-				printf("p  %d  t  %d\n", position, size_seg);				
+				
 
 				if (position>=size_seg) 
 				{
-					WARNING_MSG("Attention : Adresse hors de la zone allouée\n Allocation des bytes manquants\n");
-
-					content_etendu = calloc(position, sizeof(byte)); //Allocation du contenu étendu
-					
-					//Les premiers bytes du tableau sont ceux déjà contenus dans la mémoire	
-					for(i=0 ; i<size_seg ; i++)
-					{
-						content_etendu[i] = (*(param.p_memory))->seg[iseg].content[i];
-					}					
-
-					//On initialise à 0 les bytes suivants
-					for(i=size_seg ; i<=position ; i++)
-					{
-						content_etendu[i] = 0;
-					}
-					
-					(*(param.p_memory))->seg[iseg].content = content_etendu;
+					WARNING_MSG("Erreur : Adresse hors de la zone allouée\n");
+					return 1;
 				}
 
 
@@ -617,31 +614,22 @@ int setcmd(interpreteur inter,pm_glob param)
 					WARNING_MSG("Attention : L'adresse entrée n'appartient pas à la mémoire modifiable\n");
 					return 1 ;
 				}
+
+				if (adresse%4!=0) 
+				{	
+					WARNING_MSG("L'adresse n'est pas multiple de 4\n");		
+					return 1;
+				}
 				
+
 				if (position>=size_seg) 
 				{
-					WARNING_MSG("Attention : Adresse hors de la zone allouée\n Allocation des bytes manquants\n");
-
-					content_etendu = calloc(position+3, sizeof(byte)); //Allocation du contenu étendu
-					
-					//Les premiers bytes du tableau sont ceux déjà contenus dans la mémoire			
-					for(i=0 ; i<size_seg ; i++)
-					{
-						content_etendu[i] = (*(param.p_memory))->seg[iseg].content[i];
-					}					
-
-					//On initialise à 0 les bytes suivants
-					for(i=size_seg ; i<=position+3 ; i++)
-					{
-						content_etendu[i] = 0;
-					}
-					
-					(*(param.p_memory))->seg[iseg].content = content_etendu;
+					WARNING_MSG("Erreur : Adresse hors de la zone allouée\n");
+					return 1;
 				}
 
 				if (is_hexa32(token))
 				{
-
 
 					decouper_word_hexa(token,&mot_cut);
 					valeur = convertir_string_add(token);
@@ -652,7 +640,6 @@ int setcmd(interpreteur inter,pm_glob param)
 					(*(param.p_memory))->seg[iseg].content[position+1]=mot_cut[1];
 					(*(param.p_memory))->seg[iseg].content[position+2]=mot_cut[2];
 					(*(param.p_memory))->seg[iseg].content[position+3]=mot_cut[3];
-
 
 					return 0;
 
@@ -1030,7 +1017,6 @@ int runcmd(interpreteur inter, pm_glob param)
 	int i_text;
 
 
-
 	//On vérifie qu'un fichier a été chargé en mémoire
 	if (memory==NULL)
 	{
@@ -1043,7 +1029,7 @@ int runcmd(interpreteur inter, pm_glob param)
 	//Résolution du cas où deux run sont lancés l'un à la suite de l'autre.
 	//L'état NOT_STARTED est alors sauté	
 
-	if (*param.p_last_disasm!=0)
+	if ((*param.p_last_disasm!=0)&&(inter->etat != PAUSE))
 	{
 		if (param.p_registre[34].content > adrtext)
 		{	
@@ -1150,6 +1136,7 @@ int breakcmd(interpreteur inter,pm_glob param) {
 			token = get_next_token (inter);
 			if (token==NULL) return 1; //Si pas d'argument derrière add
 			//printf("Le token est : %s\n",token);
+
 			if (is_hexa32(token))	//Si l'argument est bien une adresse 
 			{
 				
@@ -1179,7 +1166,7 @@ int breakcmd(interpreteur inter,pm_glob param) {
 				}
 
 				return 0;				
-			}			
+			}
 			
 		}
 

@@ -14,14 +14,9 @@ int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 
-
-
-	int rt_val = (byte) (registre[inst.rt].content & 0x000000ff);
+	int rt_val = (int8_t) (registre[inst.rt].content & 0x000000ff);
 
 	registre[inst.rd].content = rt_val;
-
-
-
 
 	return 0;
 }

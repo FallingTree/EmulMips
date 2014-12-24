@@ -1,0 +1,14 @@
+#-------
+#TEST_RETURN_CODE=PASS        
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+load load_from_memory.o
+disasm 0x3000+400
+run
+disp reg all
+assert reg $a0 0x3000
+assert reg $t1 0x9
+assert reg $t2 0x20
+assert reg $t3 0xc0000
+assert reg $t4 0x20050009

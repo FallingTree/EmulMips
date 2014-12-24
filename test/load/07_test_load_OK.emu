@@ -3,4 +3,6 @@
 #TEST_COMMENT="Test d'ouverture d'un fichier"
 #-------
 
-load procedure.o 0x0000AAAA
+load procedure.o 0x0002000
+load procedure.o 0x0
+disasm 0x0+400

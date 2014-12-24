@@ -12,13 +12,14 @@
 int exec(unsigned int* jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;;
-	long int val_s; //valeur sur 32bits signée
-	int32_t a, b ; //Valeur signée sur 32bits
+	int64_t val_s; //valeur sur 64bits signée
+	int32_t a ; //Valeur signée sur 32bits
+	int16_t b ; //Valeur signée sur 16bits
 
-	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers codés sur 32 bits
+	a = registre[inst.rs].content ; //On impose l'interprétation des valeurs des registres comme entiers signés
 	b = inst.immediate ;
 
-	val_s = a + b;
+	val_s = (int64_t) a + b;
 
 	if ((val_s>INT32_MAX) || (val_s<INT32_MIN))
 		WARNING_MSG("Attention, résultat non codable sur 32bits. Le registre n'est pas modifié.");

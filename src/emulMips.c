@@ -61,7 +61,10 @@ int main ( int argc, char *argv[] ) {
     reg *registre = param.p_registre; 
     
     stab symtab=new_stab(0);		// table des symboles
-    param.p_symtab= &symtab; 
+    stab symtab_libc=new_stab(0);	// table des symboles de la libc
+    param.p_symtab= &symtab;
+    param.p_symtab_libc= &symtab_libc; 
+
     FILE * pf_elf=0; //Pointeur pour ouvrir le fichier elf
 
 
@@ -108,7 +111,7 @@ int main ( int argc, char *argv[] ) {
 	int resu_emul; //Valeur de retour de la fonction emul
 
 	int i_text=0; //Indice du segment .text dans la mémoire
-	unsigned int adrtext; //Adresse du segment .text dans la mémoire
+	unsigned int adrtext = 0; //Adresse du segment .text dans la mémoire
 	unsigned int size_text; //Taille du segment .text
 
    	INST instruction; //Instruction suivante du programme
@@ -136,18 +139,16 @@ int main ( int argc, char *argv[] ) {
 			i_id = 0;
 			i_ex = 0;
 
+
+
 			if (last_disasm==0) printf("Charger un fichier elf\n");
+
 			else
-			{
-				if (param.p_registre[34].content != adrtext)
-				{	
-					if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;		
-					printf("Réinitialisation des registres, suppression des breakpoints\n");
-					param.p_registre[34].content = adrtext;
-					liste_bp=supprimer_liste_bp(liste_bp);
-				}
-	
-			}			
+			{	
+				if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;		
+				param.p_registre[34].content = adrtext;
+			}	
+			
 			break;
 	
 		case RUN : //Etat d'éxécution de la fonction run
@@ -156,7 +157,7 @@ int main ( int argc, char *argv[] ) {
 			{	
 				jump = 0;
 
-				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
+				DEBUG_MSG("pc : %x \n", registre[34].content);
 				
 				//---------PIPELINE SIMPLIFIE---------//
 
@@ -170,7 +171,7 @@ int main ( int argc, char *argv[] ) {
 					{
 						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
 						i_ex = 1;
-						printf("Instruction exécutée : %s \n", instruction.nom);
+						DEBUG_MSG("Instruction exécutée : %s \n", instruction.nom);
 					}				
 				}
 
@@ -179,7 +180,7 @@ int main ( int argc, char *argv[] ) {
 				{
 					decode_instruction(motlu, &instruction, param);
 					i_id = 1;
-					printf("Instruction désassemblée : %s\n", instruction.nom);
+					DEBUG_MSG("Instruction désassemblée : %s\n", instruction.nom);
 
 					if (jump)
 					{
@@ -203,7 +204,7 @@ int main ( int argc, char *argv[] ) {
 
 					i_if = 1;
 
-					printf("Instruction extraite : %x\n\n", motlu);
+					DEBUG_MSG("Instruction extraite : %x\n\n", motlu);
 
 				if (etre_dans_liste(param.p_registre[34].content,*(param.p_liste_bp))) 
 				{
@@ -213,8 +214,8 @@ int main ( int argc, char *argv[] ) {
 	
 				if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
 				{
-					printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
-					inter->etat = NOT_STARTED;
+					DEBUG_MSG("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+					inter->etat = TERM;
 				}								
 
 	
@@ -227,7 +228,7 @@ int main ( int argc, char *argv[] ) {
 			while ((inter->etat==RUN_PROCEDURE)&&(!jump))
 			{	
 				
-				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
+				DEBUG_MSG("pc : %x \n", registre[34].content);
 
 				//---------PIPELINE SIMPLIFIE---------//
 
@@ -241,7 +242,7 @@ int main ( int argc, char *argv[] ) {
 					{
 						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
 						i_ex = 1;
-						printf("Instruction exécutée : %s \n", instruction.nom);
+						DEBUG_MSG("Instruction exécutée : %s \n", instruction.nom);
 					}
 				}
 
@@ -250,7 +251,7 @@ int main ( int argc, char *argv[] ) {
 				{
 					decode_instruction(motlu, &instruction, param);
 					i_id = 1;
-					printf("Instruction désassemblée : %s\n", instruction.nom);
+					DEBUG_MSG("Instruction désassemblée : %s\n", instruction.nom);
 
 					if (jump)
 					{
@@ -270,12 +271,12 @@ int main ( int argc, char *argv[] ) {
 
 					i_if = 1;
 
-					printf("Instruction extraite : %x\n\n", motlu);	
+					DEBUG_MSG("Instruction extraite : %x\n\n", motlu);	
 
 				if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
 				{
-					printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
-					inter->etat = NOT_STARTED;
+					DEBUG_MSG("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+					inter->etat = TERM;
 				}
 		
 			}
@@ -289,10 +290,10 @@ int main ( int argc, char *argv[] ) {
 			jump = 0;
 			while (! i_ex)
 			{
-				printf("Exécution d'une instruction\n");
+				DEBUG_MSG("Exécution d'une instruction\n");
 								jump = 0;
 
-				printf("ld : %x   pc : %x \n", last_disasm, registre[34].content);
+				DEBUG_MSG("pc : %x \n", registre[34].content);
 
 				
 				//---------PIPELINE SIMPLIFIE---------//
@@ -307,7 +308,7 @@ int main ( int argc, char *argv[] ) {
 					{
 						if (!jump) registre[34].content =registre[34].content + 4; //incrémentation du registre pc	
 						i_ex = 1;
-						printf("Instruction exécutée : %s \n", instruction.nom);
+						DEBUG_MSG("Instruction exécutée : %s \n", instruction.nom);
 					}
 				}
 
@@ -316,7 +317,7 @@ int main ( int argc, char *argv[] ) {
 				{
 					decode_instruction(motlu, &instruction, param);
 					i_id = 1;
-					printf("Instruction désassemblée : %s\n", instruction.nom);
+					DEBUG_MSG("Instruction désassemblée : %s\n", instruction.nom);
 
 					if (jump)
 					{
@@ -336,22 +337,28 @@ int main ( int argc, char *argv[] ) {
 
 					i_if = 1;
 
-					printf("Instruction extraite : %x\n\n", motlu);					
+					DEBUG_MSG("Instruction extraite : %x\n\n", motlu);					
 
 			}
 	
 			if (registre[34].content > last_disasm)  //Si on a atteint la fin du segment .text, terminer.	
 			{
-				printf("Pc = %x - Exécution du programme terminée\n", registre[34].content);
-				inter->etat = NOT_STARTED;
+				DEBUG_MSG("Pc = %x - Exécution du programme terminée\n", registre[34].content);
+				inter->etat = TERM;
 			}
 
 			else inter->etat = PAUSE;
 			break;
 			
 		case PAUSE :
-			printf("Programme en pause\n");
+			DEBUG_MSG("Programme en pause\n");
 			break;
+		
+		case TERM :
+
+			
+			break;
+
 	}
 	
 
@@ -366,12 +373,12 @@ int main ( int argc, char *argv[] ) {
             int res = execute_cmd(inter,param,pf_elf); /* execution de la commande */
 
 
-												//stab32_print( symtab );
+		//stab32_print( symtab );
 
             // traitement des erreurs
             switch(res) {
             case 0:
-		printf("La commande s'est exécutée correctement\n");
+		printf("La commande s'est exécutée correctement\n\n");
         
                 break;
 
@@ -381,7 +388,7 @@ int main ( int argc, char *argv[] ) {
                     fclose( fp );
                 }
 
-                printf("Fermeture du programme : Au revoir !\n");
+                printf("Fermeture du programme : Au revoir !\n\n");
 
                 del_mem(*(param.p_memory));
                 del_stab(*(param.p_symtab));
@@ -392,7 +399,7 @@ int main ( int argc, char *argv[] ) {
                 
             default:
 
-                WARNING_MSG("Erreur durant l'exécution de la commande, se référer à la commande help\n");
+                WARNING_MSG("Erreur durant l'exécution de la commande, se référer à la commande help\n\n");
                 /* erreur durant l'execution de la commande */
                 /* En mode "fichier" toute erreur implique la fin du programme ! */
                 if (inter->mode == SCRIPT) {

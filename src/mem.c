@@ -22,130 +22,88 @@
 char *strdup( const char * );
 
 
-
-//Initialise les registres avec les noms et en mettant le contenu à 0.
-
-void init_reg(reg *registre)
-{
-    
-    registre[0].content=0;
-    registre[0].name=strdup("$zero");
-
-
-    registre[1].content=0;
-    registre[1].name=strdup("$at");
-
-    registre[2].content=0;
-    registre[2].name=strdup("$v0");
-
-    registre[3].content=0;
-    registre[3].name=strdup("$v1");
-
-    registre[4].content=0;
-    registre[4].name=strdup("$a0");
-
-    registre[5].content=0;
-    registre[5].name=strdup("$a1");
-
-    registre[6].content=0;
-    registre[6].name=strdup("$a2");
-
-    registre[7].content=0;
-    registre[7].name=strdup("$a3");
-
-    registre[8].content=0;
-    registre[8].name=strdup("$t0");
-
-    registre[9].content=0;
-    registre[9].name=strdup("$t1");
-
-    registre[10].content=0;
-    registre[10].name=strdup("$t2");
-
-    registre[11].content=0;
-    registre[11].name=strdup("$t3");
-
-    registre[12].content=0;
-    registre[12].name=strdup("$t4");
-
-    registre[13].content=0;
-    registre[13].name=strdup("$t5");
-
-    registre[14].content=0;
-    registre[14].name=strdup("$t6");
-
-    registre[15].content=0;
-    registre[15].name=strdup("$t7");
-
-    registre[16].content=0;
-    registre[16].name=strdup("$s0");
-
-    registre[17].content=0;
-    registre[17].name=strdup("$s1");
-
-    registre[18].content=0;
-    registre[18].name=strdup("$s2");
-
-    registre[19].content=0;
-    registre[19].name=strdup("$s3");
-
-    registre[20].content=0;
-    registre[20].name=strdup("$s4");
-
-    registre[21].content=0;
-    registre[21].name=strdup("$s5");
-
-    registre[22].content=0;
-    registre[22].name=strdup("$s6");
-
-    registre[23].content=0;
-    registre[23].name=strdup("$s7");
-
-    registre[24].content=0;
-    registre[24].name=strdup("$t8");
-
-    registre[25].content=0;
-    registre[25].name=strdup("$t9");
-
-    registre[26].content=0;
-    registre[26].name=strdup("$k0");
-
-    registre[27].content=0;
-    registre[27].name=strdup("$k1");
-
-    registre[28].content=0;
-    registre[28].name=strdup("$gp");
-
-    registre[29].content=0;
-    registre[29].name=strdup("sp");
-
-    registre[30].content=0;
-    registre[30].name=strdup("$fp");
-
-    registre[31].content=0;
-    registre[31].name=strdup("$ra");
-
-    registre[32].content=0;
-    registre[32].name=strdup("hi");
-
-    registre[33].content=0;
-    registre[33].name=strdup("lo");
-
-    registre[34].content=0;
-    registre[34].name=strdup("pc");
-}
-
-
 /**
  * Creates a virtual memory and performs the necessary memory allocations
  * @param size  the number of segments that composes this virtual memory
  * @return the new allocated virtual memory or NULL in case of failure
  */
-
+void init_reg(reg *registre)
+{
+	registre[0].content=0;
+	registre[0].name=strdup("$zero");
+	registre[1].content=0;
+	registre[1].name=strdup("$at");
+	registre[2].content=0;
+	registre[2].name=strdup("$v0");
+	registre[3].content=0;
+	registre[3].name=strdup("$v1");
+	registre[4].content=0;
+	registre[4].name=strdup("$a0");
+	registre[5].content=0;
+	registre[5].name=strdup("$a1");
+	registre[6].content=0;
+	registre[6].name=strdup("$a2");
+	registre[7].content=0;
+	registre[7].name=strdup("$a3");
+	registre[8].content=0;
+	registre[8].name=strdup("$t0");
+	registre[9].content=0;
+	registre[9].name=strdup("$t1");
+	registre[10].content=0;
+	registre[10].name=strdup("$t2");
+	registre[11].content=0;
+	registre[11].name=strdup("$t3");
+	registre[12].content=0;
+	registre[12].name=strdup("$t4");
+	registre[13].content=0;
+	registre[13].name=strdup("$t5");
+	registre[14].content=0;
+	registre[14].name=strdup("$t6");
+	registre[15].content=0;
+	registre[15].name=strdup("$t7");
+	registre[16].content=0;
+	registre[16].name=strdup("$s0");
+	registre[17].content=0;
+	registre[17].name=strdup("$s1");
+	registre[18].content=0;
+	registre[18].name=strdup("$s2");
+	registre[19].content=0;
+	registre[19].name=strdup("$s3");
+	registre[20].content=0;
+	registre[20].name=strdup("$s4");
+	registre[21].content=0;
+	registre[21].name=strdup("$s5");
+	registre[22].content=0;
+	registre[22].name=strdup("$s6");
+	registre[23].content=0;
+	registre[23].name=strdup("$s7");
+	registre[24].content=0;
+	registre[24].name=strdup("$t8");
+	registre[25].content=0;
+	registre[25].name=strdup("$t9");
+	registre[26].content=0;
+	registre[26].name=strdup("$k0");
+	registre[27].content=0;
+	registre[27].name=strdup("$k1");
+	registre[28].content=0;
+	registre[28].name=strdup("$gp");
+	registre[29].content=0;
+	registre[29].name=strdup("sp");
+	registre[30].content=0;
+	registre[30].name=strdup("$fp");
+	registre[31].content=0;
+	registre[31].name=strdup("$ra");
+	registre[32].content=0;
+	registre[32].name=strdup("hi");
+	registre[33].content=0;
+	registre[33].name=strdup("lo");
+	registre[34].content=0;
+	registre[34].name=strdup("pc");
+}
 
 mem  init_mem( uint32_t nseg ) {
 
-    mem vm = calloc( nseg, sizeof( *vm ) );
+    mem vm = calloc( 1, sizeof( *vm ) );
 
     if ( NULL == vm ) {
         WARNING_MSG( "Unable to allocate host memory for vmem" );

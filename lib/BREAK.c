@@ -11,7 +11,7 @@
 
 int exec(unsigned int* jump, pm_glob param, INST inst){
 	
-	WARNING_MSG("Breakpoint");
+	WARNING_MSG("Breakpoint\n");
 	return 0;
 
 }

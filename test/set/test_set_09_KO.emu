@@ -4,4 +4,4 @@
 #-------
 
 load boucle.o
-set mem byte 0xffff0005 5
+set mem word 0x3040

@@ -13,7 +13,7 @@ int exec(unsigned int* p_jump, pm_glob param, INST inst){
 
 	reg *registre = param.p_registre;
 
-	*p_jump = inst.target*4 + registre[34].content + 4 ;
+	*p_jump = inst.target*4 + ((registre[34].content + 4)&0xf0000000) ;
 
 	return 0;
 }

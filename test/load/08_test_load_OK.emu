@@ -1,0 +1,10 @@
+#-------
+#TEST_RETURN_CODE=PASS        
+#TEST_COMMENT="Teste la réinitialisation des valeurs des registres"
+#-------
+
+load additions.o
+run
+load boucle.o
+assert reg $t1 0
+

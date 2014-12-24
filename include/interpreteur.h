@@ -46,7 +46,7 @@ Toute autre valeur signifie qu'une erreur est survenue
 typedef enum {INTERACTIF,SCRIPT,DEBUG_MODE} inter_mode;
 
 /* état de run */
-typedef enum {NOT_STARTED, RUN, RUN_1, RUN_PROCEDURE, PAUSE} run_etat;
+typedef enum {NOT_STARTED, RUN, RUN_1, RUN_PROCEDURE, PAUSE, TERM} run_etat;
 
 
 /* structure passée en parametre qui contient la connaissance de l'état de

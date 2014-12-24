@@ -1,4 +1,4 @@
-------
+#------
 #TEST_RETURN_CODE=PASS        
 #TEST_COMMENT="Teste fonctionnement standard"
 #On place un bp à la dernière instruction.

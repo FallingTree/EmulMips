@@ -16,7 +16,6 @@ int exec(unsigned int* p_jump, pm_glob param, INST inst){
 	int condition;
 	int32_t target_offset;
 	target_offset = inst.offset*4;
-	printf("%d", target_offset);
 
 	condition = (registre[inst.rs].content != registre[inst.rt].content);
 	if (condition) * p_jump = registre[34].content + target_offset ;

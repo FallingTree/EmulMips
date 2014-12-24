@@ -13,6 +13,7 @@ LFLAGS=-lreadline -lm -lcurses
 CFLAGS_DBG=$(CFLAGS) -g -DDEBUG -DVERBOSE
 CFLAGS_RLS=$(CFLAGS)
 CFLAGS_LIB=$(CFLAGS) -shared -fpic 
+CFLAGS_PGM=$(CFLAGS) -c 
 
 
 # definition des repertoires de source/destination
@@ -24,6 +25,11 @@ DOCDIR=doc
 LIBDIR=lib
 LIB=$(wildcard $(LIBDIR)/*.c)
 OBJ_LIB=$(LIB:.c=.lib)
+
+#Librairie
+PGMDIR = programmes
+PGM=$(wildcard $(PGMDIR)/*.s)
+OBJ_PGM=$(PGM:.s=.o)
 
 # les fichiers dont on peut se débarasser
 GARBAGE=*~ $(SRCDIR)/*~ $(INCDIR)/*~ $(TESTDIR)/*~ $(SRCDIR)/*.orig $(INCDIR)/*.orig
@@ -73,6 +79,12 @@ doc :
 clean : 
 	$(RM) $(TARGET) $(SRCDIR)/*.o $(LIBDIR)/*.lib $(GARBAGE) 
 	$(RM) -r $(DOCDIR)/*	
+
+prgm :	$(OBJ_PGM)
+
+%.o    : %.s
+	mips-gcc $(CFLAGS_PGM) $(basename $<).s -c -o $(basename $<).o
+
 
 # créé l'archive à envoyer à votre tuteur (pas de rar SVP! et interdiction absolu d'envoyer autre chose qu'une archive, il ne doit y avoir qu'un seul fichier joint dans l'e-mail !)
 archive : 
