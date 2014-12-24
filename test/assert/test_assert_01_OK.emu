@@ -3,5 +3,5 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-set reg $a0 -29
-assert reg $a0 -29
+set reg $a0 -2
+assert reg $a0 0xFFFFFFFE

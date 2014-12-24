@@ -1,12 +1,12 @@
-//----------------------------------------------------------------------------------------------------------------  
-// File : mem.h
-// Authors : Ammar Mian, Ambre Davat
-// Avec participation de François Cayre, Nicolas Castagné, François Portet
-//
-// Projet C Grenoble INP - Phelma 2A SICOM 2014 : Emulateur Mips
-// Architecture mémoire de l'émulateur
-//
-//---------------------------------------------------------------------------------------------------------------- 
+
+/**
+ * @file mem.h
+ * @author François Cayre <francois.cayre@grenoble-inp.fr>
+ * @date Fri Nov  1 00:56:03 2013
+ * @brief Memory.
+ *
+ * Memory.
+ */
 
 #ifndef _MEM_H_
 #define _MEM_H_
@@ -18,10 +18,9 @@ extern "C" {
 #include <stdint.h>
 
 #include "common/types.h"
+#include "common/types.h"
 #include "elf/syms.h"
 #include "common/liste.h"
-
-
 
 
 typedef union {
@@ -38,7 +37,7 @@ typedef struct {
 } segment;
 
 typedef struct {
-    vsize       extent; 
+    vsize       extent;
     uint32_t    nseg;
     segment    *seg;
 } *mem;
@@ -48,40 +47,66 @@ typedef struct {
     char      *name;
 } reg;
 
+
+//Structure d'une instruction du dictionnaire
+
+
+//Structure d'une instruction désassemblée de type quelconque
 typedef struct 
 {
-	char* nom;
-	unsigned int masque;
-	unsigned int mnemonique;
-	char* type;
-	int* var_op;
-	int nb_operandes;
+    char *nom;
+    char *type;
+    unsigned int rd;
+    unsigned int rs;
+    unsigned int rt;
+    unsigned int sa;
+    unsigned int immediate;
+    short int offset;
+    unsigned int target;
+} INST;
+
+typedef struct pm_gl pm_glob;
+
+typedef struct 
+{
+    char* nom;
+    unsigned int masque;
+    unsigned int mnemonique;
+    char* type;
+    int* var_op;
+    int nb_operandes;
+    int (*fonction)(unsigned int*,pm_glob,INST);
 
 } Instruction;
 
-
-typedef struct {
+struct pm_gl {
     mem *p_memory;
     reg *p_registre;
     Liste_int_t *p_liste_bp; 
     stab *p_symtab;
+    stab* p_symtab_libc;
     Instruction **p_tab_instructions;
-    int nb_instr;
-} pm_glob;
+    int *p_nb_instr;
+    unsigned int *p_last_disasm;
+    unsigned int *p_adresse_start;
+};
+
 
 #define R__   1
 #define RW_   2
 #define R_X   3
 #define UNDEF 7 /* For optionnal sections (.rodata) */
 
-#define PGSZ          4  /* Page size:  4K */
-#define STACKSZ       8  /* Stack size: 8M */
+
+#define PGSZ 4 /* Page size: 4K */
+#define STACKSZ 8 /* Stack size: 8M */
 #define STACKSZ_BYTES (STACKSZ*1024*1024)
 #define VSYCALLZ_BYTES 4096
 #define NPAGES(b) ( (b) ? ( (b)>>10 ) ? ((b)>>10)/PGSZ : 1 : 0 )
-
 #define ADDR_STACK 4286574592
 #define ADDR_VSYCALL 4294963200
+
+#define NB_REG 35
 
 
 #define RODATA      0
@@ -93,8 +118,6 @@ typedef struct {
 #define LIBC_DATA   6
 #define STACK       7
 #define VSYSCALL    8 /* CAUTION: Make sure this one is the very last */
-
-#define NB_REG    35 //Nombre de registres
 
 #define LAST_SEG    ((VSYSCALL)+1)
 

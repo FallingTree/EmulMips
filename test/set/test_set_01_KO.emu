@@ -1,6 +1,9 @@
 #-------
-#TEST_RETURN_CODE=FAIL      
+#TEST_RETURN_CODE=FAIL    
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-set reg pc 0xAAFFBBDD
+load boucle.o
+set mem 0x3000 0xAAFFBBDD
+
+

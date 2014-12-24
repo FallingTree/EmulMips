@@ -14,7 +14,7 @@ Pour calculer les mnémoniques (sauf cas particulier de SEB)
 rs rt rd shift_amount immediate adresse offset 
 
 
-Ordre des indications de la zone utilisée : rs rt rd shift_amount immediate target offset
+Ordre des indications de la zone utilisée : rs rt rd shift_amount immediate target offset base
 
 Type R :
 
@@ -29,7 +29,7 @@ Type I :
 ---------------------------------------------------------
 / 31 - 26 / 25 - 21 / 20 - 16 / 		15 - 0		    /
 ---------------------------------------------------------
- opcode      rs          rt               immediate/offset
+ opcode      rs/base    rt               immediate/offset
 
 
 Type T :

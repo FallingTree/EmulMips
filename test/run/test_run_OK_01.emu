@@ -3,4 +3,6 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-step
+load boucle.o
+run
+

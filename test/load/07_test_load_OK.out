@@ -1,7 +1,39 @@
 Bienvenue dans l'Emulateur MIPS !
+Charger un fichier elf
 La commande s'est exécutée correctement
+
+Charger un fichier elf
 La commande s'est exécutée correctement
+
+Charger un fichier elf
 La commande s'est exécutée correctement
+
+Charger un fichier elf
 La commande s'est exécutée correctement
+
+Charger un fichier elf
 La commande s'est exécutée correctement
+
+Charger un fichier elf
+Réinitialisation des registres, suppression des breakpoints
 La commande s'est exécutée correctement
+
+Réinitialisation des registres, suppression des breakpoints
+La commande s'est exécutée correctement
+
+.reginfo 
+  0 :: 20090008    ADDI $t1 $zero 8
+  4 :: 00095020    ADD $t2 $zero $t1
+  8 :: 00094880    SLL $t1 $t1 2
+  c :: 0c000009    JAL 0x24
+  10 :: 00000000    NOP
+  14 :: 112a0005    BEQ $t1 $t2 5
+  18 :: 00000000    NOP
+  1c :: 0800000c    J 0x30
+  20 :: 00000000    NOP
+  24 :: 00094882    SRL $t1 $t1 2
+  28 :: 03e00008    JR $ra
+  2c :: 00000000    NOP
+  30 :: 00000000    NOP
+La commande s'est exécutée correctement
+

@@ -14,23 +14,9 @@
 #include "mem.h"
 
 
-//Définition des structures d'instructions en champ de bits
-typedef struct { unsigned int funt:6, sp:5, rd:5, rt:5, rs:5, opcode:6;} SR;
-typedef struct { unsigned int opcode:6, rs:5, rt:5, immediate:16;} SI;
-typedef struct { unsigned int opcode:6, adress:26;} ST;
 
 //Permet de se retrouver dans le tableau des variables des opérateurs
-enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET};
-
-
-//Structure d'union pour contenir une instruction sous toutes ses formes possibles
-typedef union {
-	unsigned int mot;
-	SR r;
-	SI i;
-	ST t;
-	unsigned char octet[4];
-} INST;
+enum {RS=0,RT,RD,SA,IMMEDIATE,TARGET,OFFSET, BASE};
 
 
 int visualiser_tab_instructions(Instruction* tab, int n);

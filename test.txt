@@ -1,2 +1,5 @@
-assert reg $v0 0
-assert reg $v0 1
+load simple_multdivswlw.o
+run
+run
+run
+run

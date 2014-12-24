@@ -1,0 +1,12 @@
+#-------
+#TEST_RETURN_CODE=FAIL     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+load branchement4.o
+set reg $a0 0
+run
+assert reg $t0 0	#Registre non modifié si le branchement a bien lieu
+assert reg $t1 6	#Registre modifié
+assert reg $t2 7	#Registre modifié
+assert reg $t3 8	#Registre modifié

@@ -12,12 +12,24 @@ CFLAGS=-Wall $(INCLUDE)
 LFLAGS=-lreadline -lm -lcurses
 CFLAGS_DBG=$(CFLAGS) -g -DDEBUG -DVERBOSE
 CFLAGS_RLS=$(CFLAGS)
+CFLAGS_LIB=$(CFLAGS) -shared -fpic 
+CFLAGS_PGM=$(CFLAGS) -c 
 
 
 # definition des repertoires de source/destination
 SRCDIR=src
 INCDIR=include
 DOCDIR=doc
+
+#Librairie
+LIBDIR=lib
+LIB=$(wildcard $(LIBDIR)/*.c)
+OBJ_LIB=$(LIB:.c=.lib)
+
+#Librairie
+PGMDIR = programmes
+PGM=$(wildcard $(PGMDIR)/*.s)
+OBJ_PGM=$(PGM:.s=.o)
 
 # les fichiers dont on peut se débarasser
 GARBAGE=*~ $(SRCDIR)/*~ $(INCDIR)/*~ $(TESTDIR)/*~ $(SRCDIR)/*.orig $(INCDIR)/*.orig
@@ -38,15 +50,22 @@ all :
 	@echo ""
 	@echo "make debug   => build DEBUG   version"
 	@echo "make release => build RELEASE version"
+	@echo "make lib     => produce the library of the fuctions"
 	@echo "make doc     => produce the doxygen documentation"
 	@echo "make clean   => clean everything"
 	@echo "make tarball => produce archive .tar.gz in ../ directory"
 
-debug   : $(OBJ_DBG)
+debug   : $(OBJ_DBG) $(OBJ_LIB)
 	$(LD) $^ $(LFLAGS) -o $(TARGET)
 
-release : $(OBJ_RLS)
+release : $(OBJ_RLS) $(OBJ_LIB)
 	$(LD) $^ $(LFLAGS) -o $(TARGET)
+
+lib     : $(OBJ_LIB)
+	 
+
+%.lib   : %.c
+	$(CC) $(CFLAGS_LIB) $(basename $<).c -o $(basename $<).lib
 
 %.rls.o : %.c
 	$(CC) $< $(CFLAGS_RLS) -c -o $(basename $<).rls.o
@@ -58,8 +77,14 @@ doc :
 	$(DOXYGEN)
 
 clean : 
-	$(RM) $(TARGET) $(SRCDIR)/*.o $(GARBAGE) 
+	$(RM) $(TARGET) $(SRCDIR)/*.o $(LIBDIR)/*.lib $(GARBAGE) 
 	$(RM) -r $(DOCDIR)/*	
+
+prgm :	$(OBJ_PGM)
+
+%.o    : %.s
+	mips-gcc $(CFLAGS_PGM) $(basename $<).s -c -o $(basename $<).o
+
 
 # créé l'archive à envoyer à votre tuteur (pas de rar SVP! et interdiction absolu d'envoyer autre chose qu'une archive, il ne doit y avoir qu'un seul fichier joint dans l'e-mail !)
 archive : 

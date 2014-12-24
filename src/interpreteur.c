@@ -18,11 +18,13 @@
 
 
  #include "interpreteur.h"
- #include "load.h"
  #include "is_type.h"
+ #include "load.h"
+ #include "disasm.h"
+ #include "emul.h"
+ #include "trouver.h"
 
-
-//Fonction permettant de découper un mot en hexadécimal en un tableau de byte correspondants aux parties (de 2) du mot
+//Fonction permettant de découper un mot hexadécimal en un tableau de bytes
 
 void decouper_word_hexa(char* chaine, byte** tab){
 
@@ -30,7 +32,7 @@ void decouper_word_hexa(char* chaine, byte** tab){
 	char *adresse_c;
 	int i=0;
 	int k=0;
-	char b0[5], b1[5], b2[5], b3[5]; //Contenants des mots
+	char b0[5], b1[3], b2[3], b3[3]; //Contenants des mots
 
 // ------------------------ Vérifications d'usage ----------------------------------------	
 	if (chaine==NULL) return ;
@@ -74,7 +76,7 @@ void decouper_word_hexa(char* chaine, byte** tab){
 
 
 	b1[0]='0';
-	b1[1]='x';
+	b1[1]='x';			
 	b1[2]=adresse_c[4];
 	b1[3]=adresse_c[5];
 	b1[4]='\0';
@@ -101,148 +103,6 @@ void decouper_word_hexa(char* chaine, byte** tab){
 
 
 }
-
-//Fonction qui permet de trouver le segment correspondant à une adresse donnée
-int trouver_seg_adresse(int adresse,pm_glob param){
-	int i;
-
-	 for ( i= 0; i < (*(param.p_memory))->nseg-1; i++ ) {
-		if ( (*(param.p_memory))->seg[i].start._32 <= adresse && (*(param.p_memory))->seg[i+1].start._32>adresse) return i;
-	}
-	
-	//Cas où il s'agit du dernier segment
-	if ( (*(param.p_memory))->seg[i+1].start._32<=adresse) return i+1;
-
-	return -1; //Si ne se trouve pas dans la mémoire
-}
-
-//Fonction qui permet d'obtenir la valeur d'un mot dans un segment à partir de l'adresse virtuelle de ce mot
-//(cette fonction ne fait pas de vérification ; c'est aux fonctions qui l'utilisent de vérifier que l'adresse passée en paramètre est correcte)
-
-word trouver_mot_adresse(int adresse, pm_glob param)
-{
-	mem memory = *(param.p_memory);//la mémoire
-
-	//Rappel : memory->seg[i_text].content est un tableau qui (si un fichier elf a été chargé) contient les bytes de la section .text
-	//Si l'adresse virtuelle du mot lu est 0x5000, alors les bytes du mot sont contenus dans les cases 0, 1, 2 et 3 du tableau .content.
-	//Si l'adresse virtuelle du mot lu est 0x5004, alors les bytes du mot sont contenus dans les cases 4, 5, 6, 7 tableau .content.
-	//...
-
-
-	word motlu ;//le mot lu
-	int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
-	int position = adresse - memory->seg[iseg].start._32; //Position du premier byte dans le segment
-	byte b1, b2, b3, b4 ; // les bytes constituant le mot
-
-	//Lecture des bytes
-	b1 = memory->seg[iseg].content[position] ;
-	b2 = memory->seg[iseg].content[position+1] ;
-	b3 = memory->seg[iseg].content[position+2] ;
-	b4 = memory->seg[iseg].content[position+3] ;
-
-	//Calcul du mot (le Mips est un processeur de type big endian)
-	//16 puis 2 = 256
-	//16 puis 4 = 65536
-	//16 puis 6 = 16777216
-
-	motlu = b4 + b3*256 + b2*65536 + b1*16777216;
-
-
-	return motlu;
-
-}
-
-//Fonction qui permet d'obtenir la valeur d'un byte dans un segment à partir de l'adresse virtuelle de ce byte
-//(cette fonction ne fait pas de vérification ; c'est aux fonctions qui l'utilisent de vérifier que l'adresse passée en paramètre est correcte)
-
-byte trouver_byte_adresse(int adresse, pm_glob param)
-{
-	mem memory = *(param.p_memory);//la mémoire
-	byte bylu ;//le byte lu
-	int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
-	int position = adresse - memory->seg[iseg].start._32; //Position du byte dans le segment
-
-	bylu = memory->seg[iseg].content[position] ;
-	return bylu;
-
-}
-
-
-//Fonction qui convertit une adresse hexadécimale (chaine de caractère) en un entier 
-//Attention l'adresse doir etre écrite au maximum sur 8 chiffres sinon renvoie 0
-int convertir_string_add(char* chaine){
-	
-	char *adresse_c;
-	int i=0;
-	int j=0;
-	int k=0;
-	int val=0;
-
-// ------------------------ Vérifications d'usage ----------------------------------------	
-	if (chaine==NULL) return 0;
-
-	while (chaine[i]!='\0'){
-		i++;
-	}
-
-	if (i==0) return 0;
-	if (i==2) return 0;
-
-
-	//S'il sagit d'une adresse sur plus de 8 chiffres
-	if (i>10)
-	{
-		return 0;
-	}
-
-
-// ------------------------ Normalisation de la chaine -------------------------------------
-	adresse_c=strdup("00000000");
-
-
-	//On copie la portion de la chaine non nulle
-	for (k = 10-i; k <= 7; ++k)
-	{
-		adresse_c[k]=chaine[2+k-(10-i)];
-	}
-
-	//printf("%s\n",adresse_c); debug
-
-	
-// ------------------------ Conversion en entier -------------------------------------------
-	for ( j = 7; j >= 0; --j)
-	{
-		if (adresse_c[j]>='0' && adresse_c[j]<='9'){		//S'il sagit d'un chiffre, on retire 48 pour trouver le bon chiffre
-			val+=(adresse_c[j]-48)*(int)pow(16,7-j);
-		    //printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-48, (int)pow(16,7-j)); debug
-
-		}
-
-		else if(adresse_c[j]>='a' && adresse_c[j]<='f')		//S'il sagit d'une lettre minuscule, on retire 87
-		{
-			val+=(adresse_c[j]-87)*(int)pow(16,7-j);
-			//printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-87, (int)pow(16,7-j)); debug
-		}
-
-		else if (adresse_c[j]>='A' && adresse_c[j]<='F')	//S'il sagit d'une lettre majuscule, on retire 55
-		{
-			val+=(adresse_c[j]-55)*(int)pow(16,7-j);
-			//printf("Cas 2 : caratère %c %d * %d\n",adresse_c[j],adresse_c[j]-55, (int)pow(16,7-j)); debug
-		}
-
-		else 
-		{
-		//printf("Cas 4 : 0\n"); debug
-		val+=0;
-		}	
-	}
-	// printf("Valeur finale :%d\n",val); debug
-	return val;
-
-
-}
-
-
 
 
 /**
@@ -347,7 +207,7 @@ int testcmd(interpreteur inter) {
     while((token = get_next_token(inter))!=NULL && return_value==0) {
     		no_args=0;
         switch(get_type(token)) {
-        case HEXA:
+        case HEXA32:
             sscanf(token,"%x",&hexValue);
             return_value = _testcmd(hexValue);
             break;
@@ -383,26 +243,80 @@ int exitcmd(interpreteur inter) {
 }
 
 
-
-/*Pour l'instant les fonctions se contentent de reconnaîre
-*les bons parametres d'entree
-*/
-
-
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
 	
+	unsigned int adrtext;
+	int rload;
+	int i_text;
+	unsigned int size_text ;
+	unsigned int ad_load;
+	char nom_fichier[50] ;
+	strcpy(nom_fichier, "programmes/");
+
+	char* token = get_next_token (inter);
+
+	printf("Réinitialisation des registres, suppression des breakpoints\n");			
+
+	*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
+	init_reg(param.p_registre);
+
+	inter->etat = NOT_STARTED ;
+
+	if (token==NULL) return 1;
+
 	//On récupère le nom du fichier à ouvrir
-	char *nom_fichier = get_next_token (inter);
+	strcat(nom_fichier, token);
 
 	//Ainsi que l'adresse du premier segment
-	char* adresse=get_next_token (inter);
-	if (adresse!= NULL && !is_hexa(adresse)){
-		WARNING_MSG("Attention : %s n'est pas une adresse\n",adresse);
-		return 1;
-	}
+	
 	if (is_objet(nom_fichier)) 
-	{	
-		return load (param.p_memory,param.p_symtab,pf_elf,nom_fichier);
+	{		
+
+		char* adresse=get_next_token (inter);
+		if (adresse!= NULL && !is_hexa32(adresse)){
+			WARNING_MSG("Attention : %s n'est pas une adresse\n",adresse);
+			return 1;
+		}
+
+		if (!adresse)
+		{
+			
+			ad_load = 0x3000;
+			param.p_adresse_start = &ad_load;
+			rload = load (param,pf_elf,nom_fichier);
+			if (rload != 0) return 1;
+		
+			if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+		
+			param.p_registre[34].content = adrtext;	//Initialisation du registre pc
+			*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
+		
+			//stab32_print(*param.p_symtab); //Affichage de la table des symboles
+
+			return 0;
+		}
+
+		ad_load=convertir_string_add(adresse);
+		if (ad_load%0x1000 != 0)
+		{
+			WARNING_MSG("Attention : %s n'est pas une adresse multiple de 0x1000\n",adresse);
+			return 1;
+		}
+
+		param.p_adresse_start = &ad_load;
+
+		rload = load (param,pf_elf,nom_fichier);
+		if (rload != 0) return 1;
+	
+		if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+	
+		param.p_registre[34].content = adrtext;	//Initialisation du registre pc
+		*param.p_last_disasm = adrtext + size_text - 4;	//Récupération de l'adresse de la dernière instruction
+	
+		//stab32_print(*param.p_symtab); //Affichage de la table des symboles
+
+		return 0;
+		
 		
 	}
 	else 
@@ -432,14 +346,15 @@ int dispcmd(interpreteur inter,pm_glob param) {
 			{
 				WARNING_MSG("Aucun fichier chargé");
 				return -2;
-		    }
+		    	}
 
 			if (strcmp(token,"map")==0) { //Dans le cas où on veut afficher la map mémoire
 				
 				printf("\n------ Sections en mémoire ------\n") ;
-    			print_mem(*(param.p_memory));
+    				print_mem(*(param.p_memory));
 				return 0;
 			}
+
 			else if (is_range(token)) //Dans le cas où on veut afficher une plage mémoire 
 			{
 
@@ -474,20 +389,22 @@ int dispcmd(interpreteur inter,pm_glob param) {
 
 					if (vad1>=vad2) 
 					{
-						printf("La seconde adresse doit être plus grande que la première");
+						WARNING_MSG("La seconde adresse doit être plus grande que la première");
 						return 1;
 					}
 
-					//printf("Adresse 1 : %x\n",vad1);
-					//printf("Adresse 2 : %x\n",vad2);
+					printf("Adresse 1 : %x\n",vad1);
+					printf("Adresse 2 : %x\n",vad2);
 
 					//On récupère les segments correspondants des adresses
 					int seg_1=trouver_seg_adresse(vad1, param);
 					int seg_2=trouver_seg_adresse(vad2, param);
+					printf("Segment 1 : %d\n",seg_1);
+					printf("Segment 2 : %d\n",seg_2);
 
-					if (seg_1==-1 || seg_2==-1 )
+					if (seg_1==-1 || seg_2== -1)
 					{
-						printf("Erreur : Adresse d'un segment non en mémoire\n");
+						WARNING_MSG("Erreur : Adresse d'un segment non en mémoire\n");
 						return 1;
 					}
 
@@ -503,42 +420,41 @@ int dispcmd(interpreteur inter,pm_glob param) {
 
        					 printf("\n");
 
-       					 return 0;
-
 					}
 
 					if (seg_2>seg_1)
 					{
 
 
-					   for (k=vad1; k < (*(param.p_memory))->seg[seg_1].start._32 + (*(param.p_memory))->seg[seg_1].size._32 ; ++k)
-						{
-							byte=trouver_byte_adresse(k,param);
-							printf("Ox%02x ",byte);
-						}
+					 for (k=vad1; k < (*(param.p_memory))->seg[seg_1].start._32 + (*(param.p_memory))->seg[seg_1].size._32 ; ++k)
+					{
+						byte=trouver_byte_adresse(k,param);
+						printf("Ox%02x ",byte);
+					}
 
-						printf("\n");
+					printf("\n");
 
        					 for(k=(*(param.p_memory))->seg[seg_2].start._32 ; k<vad2 && k < (*(param.p_memory))->seg[seg_2].start._32 + (*(param.p_memory))->seg[seg_2].size._32 ; k++)
        					 {
            		
-                       		byte=trouver_byte_adresse(k,param);
-							printf("Ox%02x ",byte);
+                       				byte=trouver_byte_adresse(k,param);
+						printf("Ox%02x ",byte);
        					 }
 
-       					 printf("\n");
-
-       					 return 0;
-
+       					printf("\n");
 
 					}
 
-
 					token = get_next_token (inter);
 				}
-				return 1;
+				
+				return 0;
 			}
-			else return 1; 			
+			else 
+			{	
+				WARNING_MSG("pas plage\n");
+				return 1; 			
+			}
 		}
 	
 	else if (strcmp(token,"reg")==0)		//Dans le cas d'un affichage de registre
@@ -604,270 +520,6 @@ int dispcmd(interpreteur inter,pm_glob param) {
 
 
 
-int disasmcmd(interpreteur inter,pm_glob param) 
-{
-	mem memory = *(param.p_memory);
-
-	//On vérifie qu'un fichier a été chargé en mémoire
-	if (memory==NULL)
-	{
-  		WARNING_MSG("Il faut d'abord charger un fichier objet/n");
-		return 1;
-	}	
-
-	char *token = NULL;   
-	token = get_next_token (inter);
-	if (token==NULL) return 1;
-
-	while (token!=NULL)
-	{
-
-		//--------------------------Vérification des paramètres--------------------------//
-
-
-		if (!is_range(token)) return 1;
-
-		//On extrait les deux adresses de la plage
-		char* ad1 =NULL;
-		char* ad2 =NULL;
-		int cas = (strchr(token, ':')==NULL);	//Il y a deux types de plages. Celles avec un + et celles avec : 
-						     	//Si cas=0 l'adresse de fin de plage est ad2, sinon c'est ad1+ad2		
-		ad1 = strtok( token, ":+");
-		ad2 = strtok(NULL, ":+");	 
-
-		//On récupère le numéro du segment .text dans la mémoire
-		int i_text=0;
-		if (memory->seg[i_text].name==NULL) 
-		{
-			WARNING_MSG("Les segments de la mémoire n'ont pas été chargés");
-			return 1;
-		}		
-		while (strcmp(memory->seg[i_text].name,".text")!=0)
-		{
-			i_text=i_text+1;
-			if (i_text>NB_SECTIONS) 
-			{	WARNING_MSG("La mémoire ne contient pas de segment .text\n");
-				return 1;
-			}
-		}
-
-		//Récupération de la valeur de l'adresse du segment .text
-
-		unsigned int adrtext;
-		switch( SCN_WIDTH( memory->seg[i_text].attr ) ) 
-		{
-           	case 32 :
-			adrtext = memory->seg[i_text].start._32;
-                	break;
-            	default :
-                	return 1;
-            	}
-		
-		//Récupération des valeurs des adresses
-
-		int vad1 = convertir_string_add (ad1);
-		int vad2 ;
-		char ** endptr2 = NULL;
-
-		if (cas==0)
-		{
-			vad2 = convertir_string_add(ad2);
-	
-		}
-		else 
-		{
-			vad2 = vad1 + strtol(ad2,endptr2,10);	
-		}
-
-		//On vérifie que la valeur de la deuxième adresse est plus grande que la première
-
-		if (vad1>=vad2) 
-		{
-			WARNING_MSG("La seconde adresse doit être plus grande que la première\n");
-			return 1;
-		}
-
-		//On vérifie que la plage appartient bien au segment .text de la mémoire
-
-		if ((adrtext > vad1)||(vad2 > adrtext + 0x00001000))
-
-		{
-			WARNING_MSG("La plage n'appartient pas au segment .text\n");
-			return 1;
-		}
-
-		//On vérifie que les deux adresses sont multiples de 4. 
-
-		if (vad1%4!=0) 
-		{	
-			WARNING_MSG("La première adresse n'est pas multiple de 4\n");		
-			return 1;
-		}
-
-		if (vad2%4!=0)
-		{	
-			WARNING_MSG("La deuxième adresse n'est pas multiple de 4\n");		
-			return 1;
-		}
-
-
-		//--------------------------Actions de la commande--------------------------//
-		
-
-
-		unsigned int size_text ;
-		size_text = memory->seg[i_text].size._32 ; //On récupère la taille du segment .text
-
-		int position = vad1 - adrtext; //Indice du tableau contenant les données de .text auquel se trouve le premier byte de l'instruction.
-
-		Instruction * tab_instructions = *(param.p_tab_instructions); //Tableau des mnémoniques
-		int nb_instructions = param.nb_instr; //Nombre d'instructions du dictionnaire. A modifier.
-		word motlu ;//L'instruction lue
-
-		while ((position < size_text)&&(position<vad2-adrtext)) //Tant qu'on n'a pas atteint la fin des données .text, ni la fin de la plage
-		{ 
-			printf("%x :: ", adrtext + position); //Affichage de l'adresse virtuelle de l'instruction lue. 
-			motlu = trouver_mot_adresse(adrtext+position, param); //On lit l'instruction.
-			printf("%08x    ",motlu);
-
-			int iinst = 0 ; //Indice du mnémonique lu dans le dictionnaire
-
-			unsigned int masque = tab_instructions[iinst].masque; //Premier masque du dictionnaire
-			unsigned int mnemo = tab_instructions[iinst].mnemonique; //Premier mnémonique du dictionnaire
-
-			int test = ((motlu & masque)!= mnemo);//Test qui définit l'arrêt de la boucle while (voir ci-après)
-
-			if (motlu==0) printf("NOP\n"); //Si on lit un mot nul, on sait que l'instruction est NOP.
-
-			else //----------------Reconnaissance des instructions autres que NOP---------------------
-			
-			{
-				//Comparaison du mot lu aux mnémoniques du dictionnaire avec une opération bit à bit
-		
-				while (test &&(iinst<nb_instructions)) //Tant qu'on n'a pas trouvé le bon mnemonique (càd test = 0) 
-									//et qu'on n'a pas atteint la fin du tableau
-				{					
-					iinst++;
-					masque = tab_instructions[iinst].masque; //On passe au masque suivant
-					mnemo = tab_instructions[iinst].mnemonique; //On passe au mnémonique suivant
-					
-					test = ((motlu & masque)!= mnemo);
-					//La boucle s'arrête si l'expression binaire du mnémonique apparaît dans l'expression binaire de bylu.
-					//On isole donc la partie de bylu correspondant au mnémonique grâce à une opération bit à bit, 
-					//puis on la compare au mnémonique.
-
-				}
-	
-				//Affichage des instructions
-				char* t = tab_instructions[iinst].type;
-				unsigned int rd, rs, rt, sa, immediate, target, offset;
-				reg *registre = param.p_registre;
-
-			
-				if (iinst == nb_instructions) printf("Instruction inconnue\n");
-				else
-				{
-					printf("%s ",tab_instructions[iinst].nom);
-					if (strcmp(t,"R")==0)
-					{
-						rd = (motlu & 63488)/2048; // 63488 = 1111100000000000 en binaire, 
-										//on divise par 2048 = 2puis11 pour se ramener au numéro du registre
-						rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
-						rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
-						sa = (motlu & 1984)/ 64; //1984 = 11111000000 en binaire et 64 = 2puis6 				
-
-						//On traite à part le cas de la commande SEB qui nécessite une valeur spéciale sa précise
-						if ((strcmp(tab_instructions[iinst].nom,"SEB")==0)&&(sa=16))
-						{
-							printf("%s %s %u\n", registre[rd].name, registre[rt].name, sa);
-						}
-						else
-						{
-						//Les opérandes à afficher dépendent de l'instruction (voir nomenclature_dictionnaire.txt)
-
-							if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
-										&&tab_instructions[iinst].var_op[2] ) 
-								printf("%s %s %s\n", registre[rd].name, registre[rs].name, registre[rt].name);
-
-							else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
-											&&tab_instructions[iinst].var_op[3]) 
-								printf("%s %s %u\n", registre[rd].name, registre[rt].name, sa);
-	
-							else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]) 
-								printf("%s %s\n", registre[rs].name, registre[rt].name);
-
-							else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[2]) 
-								printf("%s %s\n", registre[rd].name, registre[rs].name);
-
-							else if (tab_instructions[iinst].var_op[0]) 
-								printf("%s\n", registre[rs].name);
-	
-							else if (tab_instructions[iinst].var_op[2]) 
-								printf("%s\n", registre[rd].name);
-	
-							else printf("\n");				
-						}			
-					}
-					else if (strcmp(t,"I")==0)
-					{
-						rs = (motlu & 65011712)/2097152; //65011712 = 1111100000000000000000 en binaire, 2097152 = 2puis21
-						rt = (motlu & 2031616)/65536 ;//2031616 = 111110000000000000000 en binaire, 65536 = 2puis16
-						immediate = (motlu & 65535) ;//65535 = 1111111111111111
-						offset = immediate *4 ;//Le codage de l'offset économise deux zéros, 
-								//car l'adresse d'un mot est forcément multiple de 4
-								//Pour avoir la bonne adresse, il faut donc multiplier par 4.
-
-						if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
-								&&tab_instructions[iinst].var_op[4] ) 
-							printf("%s %s %u\n", registre[rt].name, registre[rs].name, immediate);
-
-						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[1]
-								&&tab_instructions[iinst].var_op[6] ) 
-							printf("%s %s %u\n", registre[rs].name, registre[rt].name, offset);
-
-						else if (tab_instructions[iinst].var_op[0]&&tab_instructions[iinst].var_op[4]) 
-							printf("%s %u\n", registre[rs].name, immediate);
-	
-						else if (tab_instructions[iinst].var_op[1]&&tab_instructions[iinst].var_op[4]) 
-							printf("%s %u\n", registre[rt].name, immediate);
-					
-						else WARNING_MSG("Opérandes mal définis");
-					
-	
-					}
-					else if (strcmp(t,"T")==0)
-					{
-						target = (motlu & 67108863); //67108863 = 11111111111111111111111111
-									//L'instruction ne contient que 26bits.
-						target = target*4; //On ajoute 2bits car l'adresse est forcément un multiple de 4.
-						target = (target | ((adrtext + position + 4) & 4026531840));
-							//Enfin, on ajoute les 4bits de poids forts du compteur programme
-							//adrtext + position + 4 est l'adresse de l'instruction suivante
-							//4026531840 = 11110000000000000000000000000000 est le masque 
-							//qui permet d'obtenir les poids forts
-
-				
-						printf("%u\n",  target);
-					}
-				        else WARNING_MSG("Type d'instruction inconnu\n");
-
-				}
-
-			
-			}
-			position = position+4; 
-		}
-
-		
-
-		//--------------------------On recommence avec le token suivant--------------------------//
-
-		token = get_next_token (inter);
-	}
-	
-	return 0;
-}
-
 int setcmd(interpreteur inter,pm_glob param) 
 {
 	char *token = NULL;
@@ -875,48 +527,71 @@ int setcmd(interpreteur inter,pm_glob param)
 	char* reg;
 	int reg_num, adresse, valeur;
 	byte* mot_cut=calloc(4,sizeof(*mot_cut));
-
+	char ** endptr = NULL;
 
 	token = get_next_token (inter);
 	if (token==NULL) return 1;	
 	
 	if (strcmp(token,"mem")==0)
 	{
+		if (*(param.p_memory)==NULL)
+		{
+			WARNING_MSG("Aucun fichier chargé");
+			return -2;
+		}
 		token = get_next_token (inter);
 		if (token==NULL) return 1;	
 		if (strcmp(token,"byte")==0)
 		{	
 			token = get_next_token (inter);	
 			if (token==NULL) return 1;
-			if (is_hexa(token))
+			if (is_hexa32(token))
 			{
 				adresse=convertir_string_add(token);
 				token = get_next_token (inter);
 
-				if (is_hexa(token)){
-
-				int valeur = convertir_string_add(token);
-				if (is_integer8(token)) return 1;
-
 				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
-				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
+				
+				if (iseg == -1) 
+				{
+					WARNING_MSG("Attention : L'adresse entrée n'appartient pas à la mémoire modifiable\n");
+					return 1 ;
+				}
 
-				(*(param.p_memory))->seg[iseg].content[position]=valeur; //On met le nombre voulu dans la mémoire
-				return 0;
+				int size_seg = (*(param.p_memory))->seg[iseg].size._32; //Taille en nombre de bytes du segment
+
+				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
+				
+
+				if (position>=size_seg) 
+				{
+					WARNING_MSG("Erreur : Adresse hors de la zone allouée\n");
+					return 1;
+				}
+
+
+				if (is_hexa8(token))
+				{
+
+					valeur = convertir_string_add(token);
+					(*(param.p_memory))->seg[iseg].content[position]=valeur; //On met le nombre voulu dans la mémoire
+					return 0;
 
 				}
 
-				if (is_integer8(token)){
-
-				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
-				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
-
-				(*(param.p_memory))->seg[iseg].content[position]=atoi(token); //On met le nombre voulu dans la mémoire
-				return 0;
+				if (is_integer8(token))
+				{
+	
+					(*(param.p_memory))->seg[iseg].content[position]=atoi(token); //On met le nombre voulu dans la mémoire
+					return 0;
 
 				}
 				
-				else return 1;				
+				else 
+				{
+					WARNING_MSG("Erreur : Valeur non codable sur 8bits\n");
+					return 1;				
+				}			
 			}
 			else return 1;
 		}
@@ -925,32 +600,73 @@ int setcmd(interpreteur inter,pm_glob param)
 		{	
 
 			token = get_next_token (inter);	
-			if (is_hexa(token))
+			if (is_hexa32(token))
 			{
 				adresse=convertir_string_add(token);
 				token = get_next_token (inter);
+				
+				int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
+				int size_seg = (*(param.p_memory))->seg[iseg].size._32; //Taille en nombre de bytes du segment
+				int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte dans le segment
 
-				if (is_hexa(token)){
+				if (iseg == -1) 
+				{
+					WARNING_MSG("Attention : L'adresse entrée n'appartient pas à la mémoire modifiable\n");
+					return 1 ;
+				}
 
+				if (adresse%4!=0) 
+				{	
+					WARNING_MSG("L'adresse n'est pas multiple de 4\n");		
+					return 1;
+				}
+				
+
+				if (position>=size_seg) 
+				{
+					WARNING_MSG("Erreur : Adresse hors de la zone allouée\n");
+					return 1;
+				}
+
+				if (is_hexa32(token))
+				{
 
 					decouper_word_hexa(token,&mot_cut);
 					valeur = convertir_string_add(token);
-					if (is_integer8(token)) return 1;
-
-					int iseg = trouver_seg_adresse(adresse, param); //le numéro du segment où se trouve le mot
-					int position = adresse - (*(param.p_memory))->seg[iseg].start._32; //Position du byte de l'adresse dans le segment
+			
+					//Le Mips est un processeur de type big endian, donc l'octet de poids fort se trouve à l'adresse la plus basse
 
 					(*(param.p_memory))->seg[iseg].content[position]=mot_cut[0];
 					(*(param.p_memory))->seg[iseg].content[position+1]=mot_cut[1];
 					(*(param.p_memory))->seg[iseg].content[position+2]=mot_cut[2];
 					(*(param.p_memory))->seg[iseg].content[position+3]=mot_cut[3];
 
+					return 0;
+
+				}
+
+				if (is_integer32(token)){
+
+ 					valeur = strtol(token,endptr,10);
+
+					//Le Mips est un processeur de type big endian, donc l'octet de poids fort se trouve à l'adresse la plus basse
+
+					(*(param.p_memory))->seg[iseg].content[position+3]=(valeur&0xff);
+					(*(param.p_memory))->seg[iseg].content[position+2]=(valeur&0xff00)>>8;
+					(*(param.p_memory))->seg[iseg].content[position+1]=(valeur&0xff0000)>>16;
+					(*(param.p_memory))->seg[iseg].content[position]=(valeur&0xff000000)>>24;
 
 					return 0;
 
 				}
+
 				
-				else return 1;				
+				else
+				{
+					WARNING_MSG("Erreur : Entier non codable sur 32 bits\n");
+					return 1;
+				}
+				
 			}
 			else return 1;
 		}
@@ -974,34 +690,41 @@ int setcmd(interpreteur inter,pm_glob param)
 			reg_num=atoi(reg_nom); //On convertit le numéro du registre
 			if (reg_num>NB_REG)
 			{
-				printf("Erreur : registre inconnu\n");
+				WARNING_MSG("Erreur : registre inconnu\n");
 				return 1;
 			}
 
+
+			if (reg_num==0) return 0; //Si le registre à modifier est $zero, on le laisse à 0.
+
 			token=get_next_token(inter); //On récupère la valeur à donner
+
 			if (token==NULL) return 1;
 
-			if (is_integer(token))
+
+			if (is_hexa32(token))
 			{
-				param.p_registre[reg_num].content=atoi(token);
+				param.p_registre[reg_num].content= strtol(token,endptr,16);
 				return 0;
 			}
 
-			if (is_hexa(token))
+			if (is_integer32(token))
 			{
-				param.p_registre[reg_num].content=convertir_string_add(token);
+				param.p_registre[reg_num].content= strtol(token,endptr,10);
 				return 0;
 			}
 
 
+			WARNING_MSG("Erreur : Entier non codable sur 32 bits\n");
 			return 1;
-
+		
 		}
 
 		if (is_reg(token)==2 || is_reg(token)==3)// Mnémonique 
 		{
 
 			reg=strdup(token);
+			
 			token=get_next_token(inter); //On récupère la valeur à donner
 			if (token==NULL) return 1;
 
@@ -1011,17 +734,21 @@ int setcmd(interpreteur inter,pm_glob param)
 				//On parcourt le tableau pour sélectionner le registre qui nous intéressent
 				if (strcmp(reg,param.p_registre[reg_num].name)==0)	
 				{
-				
-					if (is_integer(token))
+					if (strcmp("$zero",param.p_registre[reg_num].name)==0) return 0; 
+					//Si le registre à modifier est 0, on le laisse à 0.
+
+					if (is_integer32(token))
 					{
-						param.p_registre[reg_num].content=atoi(token);
+						param.p_registre[reg_num].content=strtol(token,endptr,10);
 						// printf("Valeur à mettre : %d\n",param.p_registre[reg_num].content); //debug
+						free(reg);
 						return 0;
 					}
 
-					if (is_hexa(token))
+					if (is_hexa32(token))
 					{
-						param.p_registre[reg_num].content=convertir_string_add(token);
+						param.p_registre[reg_num].content= strtol(token,endptr,16);
+						free(reg);
 						return 0;
 					}
 				}
@@ -1031,7 +758,6 @@ int setcmd(interpreteur inter,pm_glob param)
 			return 1;
 
 		}
-
 		
 		return 1;
 	}
@@ -1050,11 +776,12 @@ int assertcmd (interpreteur inter, pm_glob param)
 	int test = 1;
 	int addr;
 	char *r ; //registre
+	int reg_num;
 	word w; 
 	byte b; 
 
 	char ** endptr = NULL;
-	long int val ;
+	unsigned int val ; //valeur passée en paramètre
  
 	char *token = NULL;   
 	token = get_next_token (inter);
@@ -1062,22 +789,69 @@ int assertcmd (interpreteur inter, pm_glob param)
 	
 	if (strcmp(token,"reg")==0)
 	{
-		r = get_next_token (inter);	
-		if (is_reg(r))
+		r = get_next_token (inter);
+		if (r==NULL) return 1;
+
+		if (is_reg(r)==1)		//Si on a un nombre de registre entre 0 et 31
 		{
-			token = get_next_token (inter);	
-			if (is_integer(token)||is_hexa(token)) 
+			
+			r[0]=r[1];
+			r[1]=r[2];	//On supprime le '$' dans le nom du registre
+			r[2]=r[3];
+			reg_num=atoi(r); //On convertit le numéro du registre
+			if (reg_num>NB_REG)
+			{
+				WARNING_MSG("Erreur : registre inconnu\n");
+				return 1;
+			}
+
+			token = get_next_token (inter);
+			if (token==NULL) return 1;	
+			
+			if (is_integer32(token)||is_hexa32(token)) 
 
 			{	
+				//On récupère la valeur passée en paramètre
+				if (is_integer32(token)) val = strtol(token,endptr,10); 
+ 				if (is_hexa32(token)) val = strtol(token,endptr,16); 
+
+				if (registre[reg_num].content==val) //teste si le registre a la valeur val
+				{
+					printf("Oui\n");
+					return 0;
+				}
+				else 
+				{
+					printf("Non\n");				
+					return 1;
+				}			
+			}			
+			else 
+			{ 
+				WARNING_MSG("Le paramètre doit être un entier\n"); 
+				return 1;
+			}
+
+		}
+
+		if (is_reg(r)==2 || is_reg(r)==3)// Mnémonique 
+		{
+			token = get_next_token (inter);
+			if (token==NULL) return 1;
+
+			if (is_integer32(token)||is_hexa32(token)) 
+			{	
 				//On cherche l'indice du registre dont on a le nom
-				while ((i<=34) & test)
+				while ((i<=34) && test)
 				{
 					test = strcmp(r,registre[i].name); //test s'annule si et seulement si la chaîne rmo et le nom du registre sont égaux
 					i++;
 				}
 
-				val = strtol(token,endptr,10); //valeur passée en paramètre
- 
+				//On récupère la valeur passée en paramètre
+				if (is_integer32(token)) val = strtol(token,endptr,10); 
+ 				if (is_hexa32(token)) val = strtol(token,endptr,16); 
+
 				if (registre[i-1].content==val) //teste si le registre a la valeur val
 				{
 					printf("Oui\n");
@@ -1104,15 +878,36 @@ int assertcmd (interpreteur inter, pm_glob param)
 
 	else if (strcmp(token,"word")==0)
 	{
+
+		if (*(param.p_memory)==NULL)
+		{
+			WARNING_MSG("Aucun fichier chargé");
+			return -2;
+		}
+
 		token = get_next_token (inter);
-		if (is_hexa(token))
+		if (token==NULL) return 1;
+		
+
+		if (is_hexa32(token))
 		{
 			addr = convertir_string_add (token);
+
+			if (addr > 0xffffffff) 
+			{
+				WARNING_MSG("Attention : L'adresse entrée n'appartient pas à la mémoire\n");
+				return 1 ;
+			}
+		
 			w = trouver_mot_adresse(addr, param);
+
 			token = get_next_token (inter);	
-			if (is_integer(token)) 			
+			if (is_integer32(token)||is_hexa32(token))  			
 			{	
-				val = strtol(token,endptr,10); //valeur passée en paramètre
+				
+				//On récupère la valeur passée en paramètre
+				if (is_integer32(token)) val = strtol(token,endptr,10); 
+ 				if (is_hexa32(token)) val = strtol(token,endptr,16); 
 
 				if (w==val) //teste si le mot a la valeur val
 				{
@@ -1140,32 +935,52 @@ int assertcmd (interpreteur inter, pm_glob param)
 
 	else if (strcmp(token,"byte")==0)
 	{
-		token = get_next_token (inter);	
-		if (is_hexa(token))
+
+		if (*(param.p_memory)==NULL)
+		{
+			WARNING_MSG("Aucun fichier chargé");
+			return -2;
+		}
+
+
+		token = get_next_token (inter);
+		if (token==NULL) return 1;
+
+		if (is_hexa32(token))
 		{
 			addr = convertir_string_add (token);
+
+			if (addr > 0xffffffff) 
+			{
+				WARNING_MSG("Attention : L'adresse entrée n'appartient pas à la mémoire\n");
+				return 1 ;
+			}
+
 			b = trouver_byte_adresse(addr, param);	
 			token = get_next_token (inter);	
-			if (is_integer8(token)) 			
-			{	
-				val = strtol(token,endptr,10); //valeur passée en paramètre
 
-				if (b==val) //teste si le byte a la valeur val
-				{
-					printf("Oui\n");
-					return 0;
-				}
-				else 
-				{
-					printf("Non\n");				
-					return 1;
-				}	
-			}			
+			//On récupère la valeur passée en paramètre
+
+			if (is_integer8(token)) val = strtol(token,endptr,10); 
+			else if (is_hexa8(token)) val = convertir_string_add (token);
 			else 
-			{ 
+			{
 				WARNING_MSG("Le paramètre doit être un entier codable sur 8bits\n"); 
 				return 1;
 			}
+
+			if (b==val) //teste si le byte a la valeur val
+			{
+				printf("Oui\n");
+				return 0;
+			}
+			else 
+			{
+				printf("Non\n");				
+				return 1;
+			}				
+
+
 		}
 		else 
 		{
@@ -1190,18 +1005,122 @@ void resumecmd (interpreteur inter)
         inter->mode = SCRIPT;
 }
 
-int runcmd(interpreteur inter) 
+
+int runcmd(interpreteur inter, pm_glob param) 
 {
+	mem memory = *(param.p_memory);
 	char *token = NULL;   
 	token = get_next_token (inter);
+	unsigned int val ;
+	unsigned int adrtext;
+	unsigned int size_text;
+	int i_text;
 
-	if (is_hexa(token)) return 0;
-	else return 1;
+
+	//On vérifie qu'un fichier a été chargé en mémoire
+	if (memory==NULL)
+	{
+  		WARNING_MSG("Il faut d'abord charger un fichier objet/n");
+		return 1;
+	}
+
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+
+	//Résolution du cas où deux run sont lancés l'un à la suite de l'autre.
+	//L'état NOT_STARTED est alors sauté	
+
+	if ((*param.p_last_disasm!=0)&&(inter->etat != PAUSE))
+	{
+		if (param.p_registre[34].content > adrtext)
+		{	
+				
+			printf("Réinitialisation des registres, suppression des breakpoints\n");
+			param.p_registre[34].content = adrtext;
+			*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
+		}
+
+	}	
+
+	//Vérification que l'adresse passée éventuellement en paramètre est correcte
+
+	if (token==NULL) printf("Exécution à partir de l'adresse courante de pc : %x\n", param.p_registre[34].content);
+	else if (is_hexa32(token))
+	{
+		val = convertir_string_add (token);
+		if (val%4!=0) 
+		{	
+			WARNING_MSG("Cette adresse n'est pas multiple de 4\n");		
+			return 1;
+		}
+		if ((val<adrtext)||(val > adrtext + 0x00001000))
+
+		{
+			WARNING_MSG("L'adresse n'appartient pas au segment .text\n");
+			return 1;
+		}
+	
+		param.p_registre[34].content = val; //On charge le registre pc avec l'adresse fournie en paramètre
+
+	}
+
+	//Modification de l'état de l'interpréteur
+	inter->etat = RUN;	
+
+	return 0;
+	
+
 }
-
-void stepcmd (interpreteur inter)
+ 
+int stepcmd (interpreteur inter, pm_glob param)
 {
 	
+	mem memory = *(param.p_memory);
+	char *token = NULL;  
+	int i_text=0;
+	unsigned int adrtext;	
+	unsigned int size_text;
+
+	//On vérifie qu'un fichier a été chargé en mémoire
+	if (memory==NULL)
+	{
+  		WARNING_MSG("Il faut d'abord charger un fichier objet\n");
+		return 1;
+	}	
+
+	if (trouver_seg_text (param, &i_text, &adrtext, &size_text) != 0) return 1;
+	
+
+	//Résolution du cas où l'état NOT_STARTED est sauté	
+
+	if (*param.p_last_disasm!=0)
+	{
+		if (param.p_registre[34].content > adrtext)
+		{	
+				
+			printf("Réinitialisation des registres, suppression des breakpoints\n");
+			param.p_registre[34].content = adrtext;
+			*param.p_liste_bp=supprimer_liste_bp(*param.p_liste_bp);
+		}
+
+	}	
+
+	size_text  = memory->seg[i_text].size._32 ; //Taille du segment .text
+
+	token = get_next_token (inter);
+
+	if (token==NULL) 
+	{
+		inter->etat = RUN ; 
+		return 0;
+	}					
+	if (strcmp(token,"into")==0)
+	{
+		inter->etat = RUN_1 ;
+
+		return 0;
+	}
+	return 1;	
+
 }
 
 int breakcmd(interpreteur inter,pm_glob param) {
@@ -1217,13 +1136,14 @@ int breakcmd(interpreteur inter,pm_glob param) {
 			token = get_next_token (inter);
 			if (token==NULL) return 1; //Si pas d'argument derrière add
 			//printf("Le token est : %s\n",token);
-			if (is_hexa(token))	//Si l'argument est bien une adresse 
+
+			if (is_hexa32(token))	//Si l'argument est bien une adresse 
 			{
 				
 				while (token!=NULL)
 				{
 
-					if (!is_hexa(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
+					if (!is_hexa32(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
 					// printf("Caratère %s :\n",token); debug
 
 					adresse=convertir_string_add(token);			// On la convertit en nombre
@@ -1246,7 +1166,7 @@ int breakcmd(interpreteur inter,pm_glob param) {
 				}
 
 				return 0;				
-			}			
+			}
 			
 		}
 
@@ -1274,7 +1194,7 @@ int breakcmd(interpreteur inter,pm_glob param) {
 			while (token!=NULL)
 			{
 
-				if (!is_hexa(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
+				if (!is_hexa32(token)) return 1;	//S'il ne s'agit pas d'une adresse on sort
 				//printf("Caratère %s :\n",token); //debug
 
 				adresse=convertir_string_add(token);			// On la convertit en nombre
@@ -1433,10 +1353,10 @@ int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf) {
         resumecmd(inter);
     }
     else if(strcmp(token, "run") == 0) {
-        return runcmd(inter);
+        return runcmd(inter, param);
     }
     else if(strcmp(token, "step") == 0) {
-        stepcmd(inter);
+        return stepcmd(inter, param);
     }
     else if(strcmp(token, "break") == 0) {
         return breakcmd(inter,param);

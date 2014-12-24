@@ -1,7 +1,7 @@
+
 #-------
-#TEST_RETURN_CODE=PASS        
+#TEST_RETURN_CODE=PASS  
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-load boucle.o
-set mem 0x3000 0xAAFFBBDD
+set reg pc 0xAAFFBBDD

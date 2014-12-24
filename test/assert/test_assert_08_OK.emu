@@ -1,0 +1,7 @@
+#-------
+#TEST_RETURN_CODE=PASS     
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+set reg $t1 0x555
+assert reg $t1 0x555

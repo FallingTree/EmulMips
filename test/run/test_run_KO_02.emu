@@ -3,4 +3,5 @@
 #TEST_COMMENT="Teste fonctionnement standard"
 #-------
 
-run 0x999999999999999999999999999999999
+load boucle.o
+run 0x5000

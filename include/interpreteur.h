@@ -42,24 +42,25 @@ Toute autre valeur signifie qu'une erreur est survenue
 
 
 
-/* mode d'interaction avec l'interpreteur (exemple)*/
+/* mode d'interaction avec l'interpreteur */
 typedef enum {INTERACTIF,SCRIPT,DEBUG_MODE} inter_mode;
+
+/* état de run */
+typedef enum {NOT_STARTED, RUN, RUN_1, RUN_PROCEDURE, PAUSE, TERM} run_etat;
+
 
 /* structure passée en parametre qui contient la connaissance de l'état de
  * l'interpréteur 
  */
 typedef struct {
     inter_mode mode;
+    run_etat etat; 
     char input[MAX_STR];
     char * from;
     char first_token;
 } *interpreteur;
 
 void decouper_word_hexa(char* chaine, byte** tab);
-int trouver_seg_adresse(int adresse,pm_glob param);
-word trouver_mot_adresse(int adresse, pm_glob param);
-byte trouver_byte_adresse(int adresse, pm_glob param);
-int convertir_string_add(char* string);
 interpreteur init_inter(void);
 void del_inter(interpreteur inter);
 char* get_next_token(interpreteur inter);
@@ -68,12 +69,12 @@ int testcmd(interpreteur inter);
 int exitcmd(interpreteur inter);
 int loadcmd(interpreteur inter,pm_glob param,FILE * pf_elf);
 int dispcmd(interpreteur inter,pm_glob param);
-int disasmcmd(interpreteur inter,pm_glob param);
 int setcmd(interpreteur inter,pm_glob param);
 int assertcmd (interpreteur inter,pm_glob param);
 void debugcmd (interpreteur inter);
 void resumecmd (interpreteur inter);
-void stepcmd (interpreteur inter);
+int runcmd(interpreteur inter, pm_glob param);
+int stepcmd (interpreteur inter, pm_glob param);
 int breakcmd(interpreteur inter, pm_glob param);
 void helpcmd(interpreteur inter);
 int execute_cmd(interpreteur inter,pm_glob param,FILE * pf_elf);

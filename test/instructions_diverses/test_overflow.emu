@@ -1,0 +1,12 @@
+#-------
+#TEST_RETURN_CODE=PASS        
+#TEST_COMMENT="Teste fonctionnement standard"
+#-------
+
+load overflow.o
+set reg $a0 0x7fffffff 
+set reg $s0 0xffffffff 
+run
+assert reg $a1 0	#Les registres ne sont pas modifiés à cause d'un dépassement de valeur
+assert reg $a2 0	#Les registres ne sont pas modifiés à cause d'un dépassement de valeur
+assert reg $a3 0	#Les registres ne sont pas modifiés à cause d'un dépassement de valeur

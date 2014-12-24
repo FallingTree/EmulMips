@@ -1,0 +1,4 @@
+load  rodata.libc.o
+disasm 0x3000+100
+run
+
