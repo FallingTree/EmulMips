@@ -42,7 +42,7 @@ les sources se trouvent dans
 les includes dans 
 ./include/ 
 
-les pluggins dans
+les plugins dans
 ./lib
 
 Les fichiers de script de test se trouvent dans 
